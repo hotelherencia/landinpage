@@ -555,8 +555,7 @@
                 </div>
 
                 <div class="contact__form-wrap" data-reveal>
-                    <form class="contact-form" action="https://formspree.io/f/xzdwzqrk" method="POST" novalidate>
-                        <input type="hidden" name="_subject" value="Nueva consulta desde hotelherencia.cl">
+                    <form class="contact-form" novalidate>
                         <div class="contact-form__grid">
                             <label class="field">
                                 <span>Nombre completo</span>
@@ -597,9 +596,13 @@
 
                         <div class="contact-form__footer">
                             <p class="contact-form__note">Responderemos a la brevedad</p>
-                            <button class="button button--primary button--submit" type="submit">Enviar consulta</button>
+                            <div class="contact-form__actions">
+                                <button class="button button--ghost" type="button" data-ver-disponibilidad>Ver disponibilidad</button>
+                                <button class="button button--primary button--submit" type="submit">Enviar consulta</button>
+                            </div>
                         </div>
 
+                        <p class="form-status" role="alert" data-disponibilidad-estado hidden></p>
                         <p class="form-status" role="status" aria-live="polite"></p>
                     </form>
                 </div>

@@ -699,6 +699,13 @@ button {
     line-height: 1.6;
 }
 
+.contact-form__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
 .button--submit[disabled] {
     opacity: 0.7;
     cursor: progress;
@@ -840,7 +847,8 @@ button {
     }
 
     .hero__actions,
-    .contact-form__footer {
+    .contact-form__footer,
+    .contact-form__actions {
         flex-direction: column;
         align-items: stretch;
     }

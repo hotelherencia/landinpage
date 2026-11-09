@@ -4,10 +4,13 @@ const navLinks = document.querySelectorAll('.site-nav a');
 const revealElements = document.querySelectorAll('[data-reveal]');
 const roomCarousels = document.querySelectorAll('[data-carousel]');
 const form = document.querySelector('.contact-form');
-const statusElement = document.querySelector('.form-status');
-const submitButton = document.querySelector('.button--submit');
+const statusElement = form?.querySelector('[role="status"]');
+const disponibilidadEstado = form?.querySelector('[data-disponibilidad-estado]');
+const disponibilidadBoton = form?.querySelector('[data-ver-disponibilidad]');
+const submitButton = form?.querySelector('.button--submit');
 const checkinInput = document.querySelector('#checkin');
 const checkoutInput = document.querySelector('#checkout');
+const guestsInput = document.querySelector('#guests');
 
 function setNavOpen(isOpen) {
     if (!siteHeader || !navToggle) {
@@ -213,18 +216,120 @@ checkinInput?.addEventListener('change', () => {
 
 checkoutInput?.addEventListener('change', validateStayDates);
 
+function urlPlataforma() {
+    return String(window.LANDING_PLATAFORMA_URL || 'https://plataforma-salman-herencia-oficial.vercel.app').replace(/\/+$/, '');
+}
+
+function urlApi() {
+    if (window.LANDING_API_URL == null) {
+        return `${urlPlataforma()}/api`;
+    }
+
+    return String(window.LANDING_API_URL).replace(/\/+$/, '');
+}
+
+function hoyLocal() {
+    return isoDateFromOffset(0);
+}
+
+function mensajeRango(inicio, fin, personas) {
+    if (!inicio || !fin) {
+        return 'Indica las fechas de tu estadía.';
+    }
+
+    if (fin <= inicio) {
+        return 'La salida debe ser posterior a la llegada.';
+    }
+
+    if (inicio < hoyLocal()) {
+        return 'La llegada no puede ser una fecha pasada.';
+    }
+
+    const noches = (new Date(`${fin}T00:00:00`) - new Date(`${inicio}T00:00:00`)) / 86400000;
+
+    if (noches > 30) {
+        return 'El rango supera las 30 noches.';
+    }
+
+    const n = Number(personas);
+
+    if (!Number.isInteger(n) || n < 1 || n > 30) {
+        return 'Personas debe estar entre 1 y 30.';
+    }
+
+    return '';
+}
+
+function mostrarDisponibilidad(mensaje) {
+    if (!disponibilidadEstado) {
+        return;
+    }
+
+    disponibilidadEstado.textContent = mensaje;
+    disponibilidadEstado.hidden = !mensaje;
+}
+
+disponibilidadBoton?.addEventListener('click', () => {
+    const inicio = checkinInput?.value ?? '';
+    const fin = checkoutInput?.value ?? '';
+    const personas = guestsInput?.value ?? '';
+    const problema = mensajeRango(inicio, fin, personas);
+
+    if (problema) {
+        mostrarDisponibilidad(problema);
+        return;
+    }
+
+    mostrarDisponibilidad('');
+    const destino = `${urlPlataforma()}/reservar?inicio=${inicio}&fin=${fin}&personas=${Number(personas)}`;
+    window.location.assign(destino);
+});
+
+function texto(valor) {
+    return String(valor ?? '').trim();
+}
+
+function cuerpoConsulta(datos) {
+    const huespedes = texto(datos.guests);
+    const checkIn = texto(datos.checkin);
+    const checkOut = texto(datos.checkout);
+    const mensaje = texto(datos.message);
+
+    return {
+        nombre: texto(datos.name),
+        correo: texto(datos.email),
+        telefono: texto(datos.phone),
+        huespedes: huespedes === '' ? null : Number(huespedes),
+        check_in: checkIn || null,
+        check_out: checkOut || null,
+        mensaje: mensaje || null
+    };
+}
+
+function mensajeEnvio(estadoHttp) {
+    if (estadoHttp === 201 || estadoHttp === 200) {
+        return 'Consulta enviada. Responderemos a la brevedad.';
+    }
+
+    if (estadoHttp === 429) {
+        return 'Recibimos demasiados intentos; espera un minuto e inténtalo de nuevo.';
+    }
+
+    if (estadoHttp === 422) {
+        return 'Revisa los datos del formulario e inténtalo de nuevo.';
+    }
+
+    return 'No se pudo enviar. Inténtalo por teléfono o WhatsApp.';
+}
+
 form?.addEventListener('submit', async (event) => {
     event.preventDefault();
     setStatus('');
 
-    const isDateRangeValid = validateStayDates();
-    const isValid = form.reportValidity() && isDateRangeValid;
+    const api = urlApi();
 
-    if (!isValid) {
-        if (!isDateRangeValid) {
-            checkoutInput?.reportValidity();
-        }
-        setStatus('Revisa los campos marcados antes de enviar la consulta.', 'error');
+    if (!api) {
+        setStatus('No se pudo enviar. Inténtalo por teléfono o WhatsApp.', 'error');
         return;
     }
 
@@ -233,28 +338,30 @@ form?.addEventListener('submit', async (event) => {
     }
 
     submitButton.disabled = true;
-    submitButton.textContent = 'Enviando...';
 
     try {
-        const response = await fetch(form.action, {
-            method: form.method,
-            body: new FormData(form),
+        const datos = Object.fromEntries(new FormData(form).entries());
+        const respuesta = await fetch(`${api}/publico/leads`, {
+            method: 'POST',
             headers: {
-                Accept: 'application/json'
-            }
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'Idempotency-Key': crypto.randomUUID()
+            },
+            body: JSON.stringify(cuerpoConsulta(datos))
         });
 
-        if (!response.ok) {
-            throw new Error('form-error');
+        if (respuesta.status === 201 || respuesta.status === 200) {
+            form.reset();
+            syncDateConstraints();
+            setStatus(mensajeEnvio(respuesta.status), 'success');
+            return;
         }
 
-        form.reset();
-        syncDateConstraints();
-        setStatus('Consulta enviada. Te responderemos usando los datos que indicaste.', 'success');
+        setStatus(mensajeEnvio(respuesta.status), 'error');
     } catch (error) {
-        setStatus('No pudimos enviar la consulta en este momento. Intenta nuevamente en unos minutos.', 'error');
+        setStatus('No se pudo enviar. Inténtalo por teléfono o WhatsApp.', 'error');
     } finally {
         submitButton.disabled = false;
-        submitButton.textContent = 'Enviar consulta';
     }
 });
