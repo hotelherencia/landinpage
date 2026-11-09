@@ -216,6 +216,53 @@ checkinInput?.addEventListener('change', () => {
 
 checkoutInput?.addEventListener('change', validateStayDates);
 
+const RECAPTCHA_SITE_KEY = '6LcKehguAAAAAG07HWp0QQOHJyMxQeWfQl3epp7n';
+
+function prepararRecaptcha() {
+    if (!RECAPTCHA_SITE_KEY || document.querySelector('script[data-recaptcha]')) {
+        return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(RECAPTCHA_SITE_KEY)}`;
+    script.async = true;
+    script.dataset.recaptcha = 'v3';
+    document.head.append(script);
+}
+
+function tokenRecaptcha(accion) {
+    if (!RECAPTCHA_SITE_KEY) {
+        return Promise.resolve('');
+    }
+
+    return new Promise((resolve, reject) => {
+        const inicio = Date.now();
+
+        const ejecutar = () => {
+            window.grecaptcha.ready(() => {
+                window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: accion }).then(resolve).catch(reject);
+            });
+        };
+
+        if (window.grecaptcha) {
+            ejecutar();
+            return;
+        }
+
+        const reloj = window.setInterval(() => {
+            if (window.grecaptcha) {
+                window.clearInterval(reloj);
+                ejecutar();
+            } else if (Date.now() - inicio > 8000) {
+                window.clearInterval(reloj);
+                reject(new Error('recaptcha'));
+            }
+        }, 50);
+    });
+}
+
+prepararRecaptcha();
+
 function urlPlataforma() {
     return String(window.LANDING_PLATAFORMA_URL || 'https://plataforma-salman-herencia-oficial.vercel.app').replace(/\/+$/, '');
 }
@@ -341,13 +388,25 @@ form?.addEventListener('submit', async (event) => {
 
     try {
         const datos = Object.fromEntries(new FormData(form).entries());
+        const cabeceras = {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'Idempotency-Key': crypto.randomUUID()
+        };
+        const token = await tokenRecaptcha('consulta');
+
+        if (RECAPTCHA_SITE_KEY && !token) {
+            setStatus('No se pudo enviar. Inténtalo por teléfono o WhatsApp.', 'error');
+            return;
+        }
+
+        if (token) {
+            cabeceras['X-Recaptcha-Token'] = token;
+        }
+
         const respuesta = await fetch(`${api}/publico/leads`, {
             method: 'POST',
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-                'Idempotency-Key': crypto.randomUUID()
-            },
+            headers: cabeceras,
             body: JSON.stringify(cuerpoConsulta(datos))
         });
 
