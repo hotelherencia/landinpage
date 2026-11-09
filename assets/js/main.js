@@ -316,20 +316,72 @@ function mostrarDisponibilidad(mensaje) {
     disponibilidadEstado.hidden = !mensaje;
 }
 
-disponibilidadBoton?.addEventListener('click', () => {
-    const inicio = checkinInput?.value ?? '';
-    const fin = checkoutInput?.value ?? '';
-    const personas = guestsInput?.value ?? '';
-    const problema = mensajeRango(inicio, fin, personas);
+disponibilidadBoton?.addEventListener('click', async () => {
+    const datos = Object.fromEntries(new FormData(form).entries());
+    const cuerpo = cuerpoConsulta(datos);
+    const problema = problemaConsulta(cuerpo);
 
     if (problema) {
         mostrarDisponibilidad(problema);
         return;
     }
 
+    const api = urlApi();
+
+    if (!api || !disponibilidadBoton) {
+        mostrarDisponibilidad('No se pudo enviar. Inténtalo por teléfono o WhatsApp.');
+        return;
+    }
+
     mostrarDisponibilidad('');
-    const destino = `${urlPlataforma()}/reservar?inicio=${inicio}&fin=${fin}&personas=${Number(personas)}`;
-    window.location.assign(destino);
+    disponibilidadBoton.disabled = true;
+
+    try {
+        const cabeceras = {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'Idempotency-Key': crypto.randomUUID()
+        };
+        const token = await tokenRecaptcha('consulta');
+
+        if (RECAPTCHA_SITE_KEY && !token) {
+            mostrarDisponibilidad('No se pudo enviar. Inténtalo por teléfono o WhatsApp.');
+            return;
+        }
+
+        if (token) {
+            cabeceras['X-Recaptcha-Token'] = token;
+        }
+
+        const respuesta = await fetch(`${api}/publico/leads`, {
+            method: 'POST',
+            headers: cabeceras,
+            body: JSON.stringify(cuerpo)
+        });
+
+        if (respuesta.status !== 201 && respuesta.status !== 200) {
+            mostrarDisponibilidad(mensajeEnvio(respuesta.status));
+            return;
+        }
+
+        const json = await respuesta.json();
+        const referencia = typeof json.referencia === 'string' ? json.referencia : '';
+        const params = new URLSearchParams({
+            inicio: cuerpo.check_in,
+            fin: cuerpo.check_out,
+            personas: String(cuerpo.huespedes)
+        });
+
+        if (/^[A-Za-z0-9_-]{20,128}$/.test(referencia)) {
+            params.set('ref', referencia);
+        }
+
+        window.location.assign(`${urlPlataforma()}/reservar?${params.toString()}`);
+    } catch (error) {
+        mostrarDisponibilidad('No se pudo enviar. Inténtalo por teléfono o WhatsApp.');
+    } finally {
+        disponibilidadBoton.disabled = false;
+    }
 });
 
 function texto(valor) {
@@ -351,6 +403,40 @@ function cuerpoConsulta(datos) {
         check_out: checkOut || null,
         mensaje: mensaje || null
     };
+}
+
+function problemaConsulta(cuerpo) {
+    if (!cuerpo.nombre || cuerpo.nombre.length > 200) {
+        return 'Indica tu nombre.';
+    }
+
+    if (cuerpo.correo.length > 320 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cuerpo.correo)) {
+        return 'Indica un correo válido.';
+    }
+
+    const digitos = cuerpo.telefono.replace(/\D/g, '');
+
+    if (cuerpo.telefono.length > 40 || digitos.length < 8 || digitos.length > 15) {
+        return 'Indica un teléfono válido.';
+    }
+
+    if (cuerpo.mensaje && cuerpo.mensaje.length > 2000) {
+        return 'El mensaje es demasiado largo.';
+    }
+
+    if ((cuerpo.check_in == null) !== (cuerpo.check_out == null)) {
+        return 'Indica las fechas de tu estadía.';
+    }
+
+    if (cuerpo.check_in && cuerpo.check_out) {
+        return mensajeRango(cuerpo.check_in, cuerpo.check_out, cuerpo.huespedes ?? 1);
+    }
+
+    if (cuerpo.huespedes != null && (!Number.isInteger(cuerpo.huespedes) || cuerpo.huespedes < 1 || cuerpo.huespedes > 30)) {
+        return 'Personas debe estar entre 1 y 30.';
+    }
+
+    return '';
 }
 
 function mensajeEnvio(estadoHttp) {
@@ -388,6 +474,14 @@ form?.addEventListener('submit', async (event) => {
 
     try {
         const datos = Object.fromEntries(new FormData(form).entries());
+        const cuerpo = cuerpoConsulta(datos);
+        const problema = problemaConsulta(cuerpo);
+
+        if (problema) {
+            setStatus(problema, 'error');
+            return;
+        }
+
         const cabeceras = {
             Accept: 'application/json',
             'Content-Type': 'application/json',
@@ -407,7 +501,7 @@ form?.addEventListener('submit', async (event) => {
         const respuesta = await fetch(`${api}/publico/leads`, {
             method: 'POST',
             headers: cabeceras,
-            body: JSON.stringify(cuerpoConsulta(datos))
+            body: JSON.stringify(cuerpo)
         });
 
         if (respuesta.status === 201 || respuesta.status === 200) {
