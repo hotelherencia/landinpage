@@ -180,12 +180,50 @@ function setStatus(message, kind = '') {
         return;
     }
 
-    statusElement.textContent = message;
+    statusElement.replaceChildren(document.createTextNode(message));
     statusElement.classList.remove('is-success', 'is-error');
 
     if (kind) {
         statusElement.classList.add(kind === 'success' ? 'is-success' : 'is-error');
     }
+}
+
+/** Tras un lead exitoso: mensaje + enlace a /reservar con ref opaca (sin PII). */
+function setStatusConContinuar(message, enlace) {
+    if (!statusElement) {
+        return;
+    }
+
+    statusElement.replaceChildren(document.createTextNode(message));
+
+    if (enlace) {
+        statusElement.append(document.createTextNode(' '));
+        const continuar = document.createElement('a');
+        continuar.href = enlace;
+        continuar.textContent = 'Continuar con la reserva';
+        statusElement.append(continuar);
+    }
+
+    statusElement.classList.remove('is-error');
+    statusElement.classList.add('is-success');
+}
+
+function enlaceContinuarReserva(cuerpo, referencia) {
+    if (!cuerpo.check_in || !cuerpo.check_out) {
+        return '';
+    }
+
+    const params = new URLSearchParams({
+        inicio: cuerpo.check_in,
+        fin: cuerpo.check_out,
+        personas: String(cuerpo.huespedes || 1)
+    });
+
+    if (/^[A-Za-z0-9_-]{20,128}$/.test(referencia || '')) {
+        params.set('ref', referencia);
+    }
+
+    return `${urlPlataforma()}/reservar?${params.toString()}`;
 }
 
 function validateStayDates() {
@@ -235,12 +273,22 @@ function tokenRecaptcha(accion) {
         return Promise.resolve('');
     }
 
-    return new Promise((resolve, reject) => {
+    const pedir = () => new Promise((resolve, reject) => {
         const inicio = Date.now();
 
         const ejecutar = () => {
             window.grecaptcha.ready(() => {
-                window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: accion }).then(resolve).catch(reject);
+                window.grecaptcha
+                    .execute(RECAPTCHA_SITE_KEY, { action: accion })
+                    .then((token) => {
+                        if (typeof token === 'string' && token.length > 20) {
+                            resolve(token);
+                            return;
+                        }
+
+                        reject(new Error('recaptcha'));
+                    })
+                    .catch(reject);
             });
         };
 
@@ -259,6 +307,12 @@ function tokenRecaptcha(accion) {
             }
         }, 50);
     });
+
+    return pedir().catch(() => pedir());
+}
+
+function mensajeFalloCaptcha() {
+    return 'No se pudo verificar el envío. Actualiza la página o escríbenos por teléfono o WhatsApp.';
 }
 
 prepararRecaptcha();
@@ -269,7 +323,7 @@ function urlPlataforma() {
 
 function urlApi() {
     if (window.LANDING_API_URL == null) {
-        return `${urlPlataforma()}/api`;
+        return '/api';
     }
 
     return String(window.LANDING_API_URL).replace(/\/+$/, '');
@@ -342,10 +396,17 @@ disponibilidadBoton?.addEventListener('click', async () => {
             'Content-Type': 'application/json',
             'Idempotency-Key': crypto.randomUUID()
         };
-        const token = await tokenRecaptcha('consulta');
+        let token = '';
+
+        try {
+            token = await tokenRecaptcha('consulta');
+        } catch {
+            mostrarDisponibilidad(mensajeFalloCaptcha());
+            return;
+        }
 
         if (RECAPTCHA_SITE_KEY && !token) {
-            mostrarDisponibilidad('No se pudo enviar. Inténtalo por teléfono o WhatsApp.');
+            mostrarDisponibilidad(mensajeFalloCaptcha());
             return;
         }
 
@@ -358,6 +419,11 @@ disponibilidadBoton?.addEventListener('click', async () => {
             headers: cabeceras,
             body: JSON.stringify(cuerpo)
         });
+
+        if (respuesta.status === 403) {
+            mostrarDisponibilidad(mensajeFalloCaptcha());
+            return;
+        }
 
         if (respuesta.status !== 201 && respuesta.status !== 200) {
             mostrarDisponibilidad(mensajeEnvio(respuesta.status));
@@ -487,10 +553,17 @@ form?.addEventListener('submit', async (event) => {
             'Content-Type': 'application/json',
             'Idempotency-Key': crypto.randomUUID()
         };
-        const token = await tokenRecaptcha('consulta');
+        let token = '';
+
+        try {
+            token = await tokenRecaptcha('consulta');
+        } catch {
+            setStatus(mensajeFalloCaptcha(), 'error');
+            return;
+        }
 
         if (RECAPTCHA_SITE_KEY && !token) {
-            setStatus('No se pudo enviar. Inténtalo por teléfono o WhatsApp.', 'error');
+            setStatus(mensajeFalloCaptcha(), 'error');
             return;
         }
 
@@ -505,9 +578,24 @@ form?.addEventListener('submit', async (event) => {
         });
 
         if (respuesta.status === 201 || respuesta.status === 200) {
+            let referencia = '';
+
+            try {
+                const json = await respuesta.json();
+                referencia = typeof json.referencia === 'string' ? json.referencia : '';
+            } catch {
+                referencia = '';
+            }
+
+            const continuar = enlaceContinuarReserva(cuerpo, referencia);
             form.reset();
             syncDateConstraints();
-            setStatus(mensajeEnvio(respuesta.status), 'success');
+            setStatusConContinuar(mensajeEnvio(respuesta.status), continuar);
+            return;
+        }
+
+        if (respuesta.status === 403) {
+            setStatus(mensajeFalloCaptcha(), 'error');
             return;
         }
 
