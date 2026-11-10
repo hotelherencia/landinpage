@@ -370,24 +370,48 @@ function mostrarDisponibilidad(mensaje) {
     disponibilidadEstado.hidden = !mensaje;
 }
 
-disponibilidadBoton?.addEventListener('click', async () => {
+async function irAReservarConFechas({ conLead }) {
+    if (!form) {
+        return;
+    }
+
     const datos = Object.fromEntries(new FormData(form).entries());
     const cuerpo = cuerpoConsulta(datos);
-    const problema = problemaConsulta(cuerpo);
+    const problemaFechas = mensajeRango(cuerpo.check_in, cuerpo.check_out, cuerpo.huespedes ?? 1);
 
-    if (problema) {
-        mostrarDisponibilidad(problema);
+    if (problemaFechas) {
+        mostrarDisponibilidad(problemaFechas);
+        return;
+    }
+
+    const problemaContacto = problemaConsulta({
+        ...cuerpo,
+        check_in: null,
+        check_out: null,
+        huespedes: null,
+        mensaje: null
+    });
+    const enlaceSoloFechas = enlaceContinuarReserva(cuerpo, '');
+
+    if (problemaContacto || !conLead) {
+        mostrarDisponibilidad(
+            problemaContacto
+                ? 'Vas a la reserva sin consulta previa: allí escribirás nombre y contacto. Para llevarlos, completa el formulario y pulsa Enviar consulta, o rellena nombre, correo y teléfono antes de Ver disponibilidad.'
+                : 'Vas a la reserva solo con las fechas; el contacto se pide allá.'
+        );
+        window.location.assign(enlaceSoloFechas);
         return;
     }
 
     const api = urlApi();
 
     if (!api || !disponibilidadBoton) {
-        mostrarDisponibilidad('No se pudo enviar. Inténtalo por teléfono o WhatsApp.');
+        mostrarDisponibilidad('Vas a la reserva solo con las fechas; el contacto se pide allá.');
+        window.location.assign(enlaceSoloFechas);
         return;
     }
 
-    mostrarDisponibilidad('');
+    mostrarDisponibilidad('Enviando consulta…');
     disponibilidadBoton.disabled = true;
 
     try {
@@ -401,12 +425,18 @@ disponibilidadBoton?.addEventListener('click', async () => {
         try {
             token = await tokenRecaptcha('consulta');
         } catch {
-            mostrarDisponibilidad(mensajeFalloCaptcha());
+            mostrarDisponibilidad(
+                'No se pudo verificar el envío. Abriremos la reserva; completa nombre y contacto allí.'
+            );
+            window.location.assign(enlaceSoloFechas);
             return;
         }
 
         if (RECAPTCHA_SITE_KEY && !token) {
-            mostrarDisponibilidad(mensajeFalloCaptcha());
+            mostrarDisponibilidad(
+                'No se pudo verificar el envío. Abriremos la reserva; completa nombre y contacto allí.'
+            );
+            window.location.assign(enlaceSoloFechas);
             return;
         }
 
@@ -421,33 +451,63 @@ disponibilidadBoton?.addEventListener('click', async () => {
         });
 
         if (respuesta.status === 403) {
-            mostrarDisponibilidad(mensajeFalloCaptcha());
+            mostrarDisponibilidad(
+                'No se pudo verificar el envío. Abriremos la reserva; completa nombre y contacto allí.'
+            );
+            window.location.assign(enlaceSoloFechas);
             return;
         }
 
         if (respuesta.status !== 201 && respuesta.status !== 200) {
-            mostrarDisponibilidad(mensajeEnvio(respuesta.status));
+            mostrarDisponibilidad(
+                'No se pudo guardar la consulta. Abriremos la reserva; completa nombre y contacto allí.'
+            );
+            window.location.assign(enlaceSoloFechas);
             return;
         }
 
-        const json = await respuesta.json();
-        const referencia = typeof json.referencia === 'string' ? json.referencia : '';
-        const params = new URLSearchParams({
-            inicio: cuerpo.check_in,
-            fin: cuerpo.check_out,
-            personas: String(cuerpo.huespedes)
-        });
+        let referencia = '';
 
-        if (/^[A-Za-z0-9_-]{20,128}$/.test(referencia)) {
-            params.set('ref', referencia);
+        try {
+            const json = await respuesta.json();
+            referencia = typeof json.referencia === 'string' ? json.referencia : '';
+        } catch {
+            referencia = '';
         }
 
-        window.location.assign(`${urlPlataforma()}/reservar?${params.toString()}`);
+        window.location.assign(enlaceContinuarReserva(cuerpo, referencia));
     } catch (error) {
-        mostrarDisponibilidad('No se pudo enviar. Inténtalo por teléfono o WhatsApp.');
+        mostrarDisponibilidad(
+            'No se pudo guardar la consulta. Abriremos la reserva; completa nombre y contacto allí.'
+        );
+        window.location.assign(enlaceSoloFechas);
     } finally {
         disponibilidadBoton.disabled = false;
     }
+}
+
+disponibilidadBoton?.addEventListener('click', () => {
+    irAReservarConFechas({ conLead: true });
+});
+
+document.querySelectorAll('[data-cta-reserva]').forEach((enlace) => {
+    enlace.addEventListener('click', (evento) => {
+        if (!form || !checkinInput || !checkoutInput) {
+            return;
+        }
+
+        const inicio = checkinInput.value;
+        const fin = checkoutInput.value;
+        const personas = guestsInput?.value || '1';
+        const problemaFechas = mensajeRango(inicio || null, fin || null, Number(personas) || 1);
+
+        if (problemaFechas) {
+            return;
+        }
+
+        evento.preventDefault();
+        irAReservarConFechas({ conLead: true });
+    });
 });
 
 function texto(valor) {
