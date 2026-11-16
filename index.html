@@ -33,8 +33,11 @@
         content="Hotel en Chillán con desayuno buffet, estacionamiento, WiFi, recepción 24 horas y habitaciones cómodas cerca del centro y la estación.">
     <meta name="twitter:image" content="https://www.hotelherencia.cl/assets/img/hotel-herencia.jpg">
     <meta name="twitter:image:alt" content="Fachada principal de Hotel Herencia en Chillán">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/assets/img/favicon-48.png">
     <link rel="icon" type="image/x-icon" href="/assets/img/herencia_favicon.ico">
-    <!-- TODO(dueño): agregar un favicon de al menos 48x48 px (ideal 192x192 PNG/SVG) y apple-touch-icon 180x180; Google exige múltiplos de 48 px para mostrarlo en resultados. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -46,8 +49,8 @@
       JSON-LD del hotel: solo datos confirmados (paquete del hotel 11-11-2026 / Anexo A).
       - "geo" se tomó del pin de la ficha "Hotel Herencia" a la que apunta hasMap (2026-11-16). Si el pin cambia, actualizarlo aquí.
       - "checkinTime" 14:00 y "checkoutTime" 12:00: POL-009/010. "numberOfRooms" 17 y "priceRange" referencial CLP 47.000 – 65.000 (IVA incluido): Anexo A.
-      - "logo": assets/img/logo-herencia-512.jpg (512x512); reemplazar por el archivo oficial en PNG/SVG si existe.
-      - "alternateName": "Herencia Hotel Boutique" sale del logo; confirmar el nombre comercial.
+      - "logo": assets/img/logo-herencia-512.png (512x512, PNG con fondo transparente, generado desde el JPEG CMYK de 2362 px).
+      - Nombre comercial visible: "Hotel Herencia". "Herencia SpA" es solo la razón social (Organization). El logo histórico incluye la leyenda «Hotel Boutique»; no se declara como alternateName.
       - Pendiente, no inventar: "postalCode", "email" de recepción, "petsAllowed", "starRating" (solo con clasificación oficial SERNATUR).
       - Agregar a "sameAs" solo perfiles oficiales reales (Facebook, TripAdvisor, Booking, URL canónica del GBP) cuando existan.
       - No agregar "aggregateRating" ni reseñas: Google no acepta valoraciones de terceros autoservidas en LodgingBusiness.
@@ -67,6 +70,7 @@
           "logo": {
             "@id": "https://www.hotelherencia.cl/#logo"
           },
+          "image": "https://www.hotelherencia.cl/assets/img/logo-herencia-512.png",
           "telephone": "+56956491501",
           "address": {
             "@type": "PostalAddress",
@@ -82,11 +86,11 @@
         {
           "@type": "ImageObject",
           "@id": "https://www.hotelherencia.cl/#logo",
-          "url": "https://www.hotelherencia.cl/assets/img/logo-herencia-512.jpg",
-          "contentUrl": "https://www.hotelherencia.cl/assets/img/logo-herencia-512.jpg",
+          "url": "https://www.hotelherencia.cl/assets/img/logo-herencia-512.png",
+          "contentUrl": "https://www.hotelherencia.cl/assets/img/logo-herencia-512.png",
           "width": 512,
           "height": 512,
-          "caption": "Logo de Herencia Hotel Boutique"
+          "caption": "Logo de Hotel Herencia"
         },
         {
           "@type": "WebSite",
@@ -96,8 +100,7 @@
           "inLanguage": "es-CL",
           "publisher": {
             "@id": "https://www.hotelherencia.cl/#organization"
-          },
-          "alternateName": "Herencia Hotel Boutique"
+          }
         },
         {
           "@type": "WebPage",
@@ -125,7 +128,6 @@
           "@type": "Hotel",
           "@id": "https://www.hotelherencia.cl/#hotel",
           "name": "Hotel Herencia",
-          "alternateName": "Herencia Hotel Boutique",
           "url": "https://www.hotelherencia.cl/",
           "mainEntityOfPage": {
             "@id": "https://www.hotelherencia.cl/#webpage"
@@ -428,6 +430,11 @@
         <section class="hero" id="inicio">
             <div class="container hero__grid">
                 <div class="hero__copy" data-reveal>
+                    <p class="hero__marca">
+                        <img src="assets/img/logo-herencia-h64.png"
+                            srcset="assets/img/logo-herencia-h64.png 1x, assets/img/logo-herencia-h128.png 2x"
+                            width="80" height="64" alt="Hotel Herencia">
+                    </p>
                     <p class="eyebrow">Hotel en Chillán</p>
                     <h1>Hotel en Chillán para descansar cerca del centro.</h1>
                     <p class="hero__lede">

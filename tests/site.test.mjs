@@ -104,19 +104,24 @@ test('todos los recursos y enlaces locales existen, y los anclajes internos apun
         const doc = html[p];
         const ids = new Set([...doc.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
         const indexIds = new Set([...html['index.html'].matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
-        for (const [, valor] of doc.matchAll(/\s(?:src|href|srcset)="([^"]+)"/g)) {
-            if (/^(https?:|tel:|mailto:)/.test(valor)) { continue; }
-            if (valor.startsWith('#')) {
-                assert.ok(ids.has(valor.slice(1)), `${p}: ancla rota ${valor}`);
-                continue;
+        for (const [, attr, valor] of doc.matchAll(/\s(src|href|srcset)="([^"]+)"/g)) {
+            const valores = attr === 'srcset'
+                ? valor.split(',').map((s) => s.trim().split(/\s+/)[0]).filter(Boolean)
+                : [valor];
+            for (const item of valores) {
+                if (/^(https?:|tel:|mailto:)/.test(item)) { continue; }
+                if (item.startsWith('#')) {
+                    assert.ok(ids.has(item.slice(1)), `${p}: ancla rota ${item}`);
+                    continue;
+                }
+                const [ruta, ancla] = item.replace(/^\//, '').split('#');
+                if (ruta === '' || ruta === 'index.html') {
+                    if (ancla) { assert.ok(indexIds.has(ancla), `${p}: ancla rota ${item}`); }
+                    continue;
+                }
+                if (ruta === 'privacidad') { continue; } // redirección 308 declarada en vercel.json
+                assert.ok(existsSync(new URL(ruta, raiz)), `${p}: no existe ${ruta}`);
             }
-            const [ruta, ancla] = valor.replace(/^\//, '').split('#');
-            if (ruta === '' || ruta === 'index.html') {
-                if (ancla) { assert.ok(indexIds.has(ancla), `${p}: ancla rota ${valor}`); }
-                continue;
-            }
-            if (ruta === 'privacidad') { continue; } // redirección 308 declarada en vercel.json
-            assert.ok(existsSync(new URL(ruta, raiz)), `${p}: no existe ${ruta}`);
         }
     }
 });
@@ -130,9 +135,14 @@ test('imágenes: alt, dimensiones, y lazy solo fuera del hero', () => {
         assert.match(img, /\swidth="\d+"/, `img ${i} sin width`);
         assert.match(img, /\sheight="\d+"/, `img ${i} sin height`);
     });
-    assert.match(imgs[0], /fetchpriority="high"/);
-    assert.doesNotMatch(imgs[0], /loading="lazy"/, 'la imagen del hero no debe ser lazy');
-    imgs.slice(1).forEach((img) => assert.match(img, /loading="lazy"/));
+    const logo = imgs.find((img) => /logo-herencia/.test(img));
+    const fotoHero = imgs.find((img) => /hero__photo|hotel-herencia\.(jpg|webp)/.test(img));
+    assert.ok(logo, 'el hero debe mostrar el logo en PNG');
+    assert.ok(fotoHero, 'el hero debe conservar la foto del hotel');
+    assert.doesNotMatch(logo, /loading="lazy"/, 'el logo del hero no debe ser lazy');
+    assert.match(fotoHero, /fetchpriority="high"/);
+    assert.doesNotMatch(fotoHero, /loading="lazy"/, 'la imagen del hero no debe ser lazy');
+    imgs.filter((img) => img !== logo && img !== fotoHero).forEach((img) => assert.match(img, /loading="lazy"/));
 });
 
 test('sitemap: solo URLs canónicas de páginas existentes, y robots.txt lo declara sin bloquear buscadores', () => {
@@ -225,6 +235,19 @@ test('Hotel JSON-LD tiene los campos confirmados, tipos de schema.org y ninguna 
 
     const hotel = nodo('Hotel');
     assert.equal(hotel.name, 'Hotel Herencia');
+    assert.ok(!('alternateName' in hotel), 'el nombre comercial es Hotel Herencia; no se declara alternateName');
+    const sitio = nodo('WebSite');
+    assert.equal(sitio.name, 'Hotel Herencia');
+    assert.ok(!('alternateName' in sitio), 'WebSite no debe declarar alternateName');
+    const organizacion = nodo('Organization');
+    assert.equal(organizacion.name, 'Herencia SpA');
+    assert.equal(organizacion.legalName, 'Herencia SpA');
+    assert.ok(organizacion.logo && organizacion.logo['@id']);
+    assert.equal(organizacion.image, 'https://www.hotelherencia.cl/assets/img/logo-herencia-512.png');
+    const logo = nodo('ImageObject');
+    assert.equal(logo.caption, 'Logo de Hotel Herencia');
+    const serialGrafo = JSON.stringify(grafo());
+    assert.doesNotMatch(serialGrafo, /Herencia Hotel Boutique/);
     assert.equal(hotel.url, BASE);
     assert.ok(hotel.logo && hotel.logo['@id']);
     assert.ok(Array.isArray(hotel.image) && hotel.image.length >= 1);
@@ -292,6 +315,9 @@ test('el texto público no afirma servicios contradichos ni pone valoraciones en
     assert.match(visible, /check-in es a partir de las 14:00/);
     assert.match(visible, /check-out hasta las 12:00/);
     assert.match(leer('llms.txt'), /plataforma\.hotelherencia\.cl\/reservar/);
+    assert.match(leer('llms.txt'), /Nombre: Hotel Herencia$/m);
+    assert.doesNotMatch(leer('llms.txt'), /Herencia Hotel Boutique/);
+    assert.doesNotMatch(leer('llms-full.txt'), /Herencia Hotel Boutique/);
     assert.match(leer('robots.txt'), /Google-Extended/);
 });
 

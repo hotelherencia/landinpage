@@ -66,7 +66,7 @@ Responsable: dueño o administración. Nada de esto se puede completar solo con 
 ### Ficha de Google Business Profile
 
 - [ ] Verificar la ficha (si aún no lo está) y que el dueño o la administradora tengan acceso de titular.
-- [ ] Nombre idéntico al del sitio: **Hotel Herencia**. Si se usa también «Herencia Hotel Boutique», definirlo como nombre adicional, no como otro negocio.
+- [ ] Nombre idéntico al del sitio: **Hotel Herencia**. El logo histórico incluye la leyenda «Hotel Boutique»; el nombre comercial es Hotel Herencia, no un segundo negocio.
 - [ ] Dirección idéntica: **Calle Diego de Almagro 751, Chillán**. Comparar con la escritura o patente municipal (el pin de Maps cae cerca del n.º 739).
 - [ ] Teléfono idéntico: **+56 9 5649 1501**.
 - [ ] Sitio web: `https://www.hotelherencia.cl/`.

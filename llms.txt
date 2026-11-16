@@ -6,7 +6,7 @@ Nota: este archivo es un resumen para asistentes de IA. No es una señal de Goog
 
 ## Datos clave
 
-- Nombre: Hotel Herencia (Herencia Hotel Boutique)
+- Nombre: Hotel Herencia
 - Operado por: Herencia SpA, RUT 76.707.504-9
 - Dirección: Calle Diego de Almagro 751, Chillán, Región de Ñuble, Chile
 - Coordenadas: -36.5983065, -72.09031

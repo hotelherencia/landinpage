@@ -123,6 +123,16 @@ button {
     padding: 4.4rem 0 2rem;
 }
 
+.hero__marca {
+    margin: 0 0 1.2rem;
+}
+
+.hero__marca img {
+    display: block;
+    height: 4rem;
+    width: auto;
+}
+
 .hero__grid {
     display: grid;
     grid-template-columns: minmax(0, 1.06fr) minmax(20rem, 0.94fr);
