@@ -13,7 +13,9 @@ const SITEVERIFY = 'https://www.google.com/recaptcha/api/siteverify';
 const fetchOriginal = globalThis.fetch;
 const entornoOriginal = { ...process.env };
 
-function peticion({ method = 'POST', headers = {}, body = '{"nombre":"x"}' } = {}) {
+const CUERPO_VALIDO = { nombre: 'Ana Pérez', correo: 'ana@example.com', telefono: '+56 9 1234 5678', huespedes: 2, check_in: null, check_out: null, mensaje: null };
+
+function peticion({ method = 'POST', headers = {}, body = JSON.stringify(CUERPO_VALIDO) } = {}) {
     const req = Readable.from([Buffer.from(body)]);
     req.method = method;
     req.headers = headers;
@@ -164,4 +166,95 @@ test('falla de red hacia DESTINO → 502 genérico', async () => {
     await handler(peticion({ headers: cabecerasValidas }), res);
     assert.equal(res.statusCode, 502);
     assert.deepEqual(res.body, { detail: 'no se pudo enviar' });
+});
+
+test('reenvía a la plataforma un token de reCAPTCHA propio (Google acepta cada token una sola vez)', async () => {
+    const res = respuesta();
+    await handler(peticion({ headers: { ...cabecerasValidas, 'x-recaptcha-token-servicio': 's'.repeat(40) } }), res);
+    assert.equal(res.statusCode, 201);
+    const verificado = new URLSearchParams(llamadas.find((l) => l.url === SITEVERIFY).opciones.body).get('response');
+    const destino = llamadas.find((l) => l.url === DESTINO);
+    assert.equal(verificado, 't'.repeat(40));
+    assert.equal(destino.opciones.headers['X-Recaptcha-Token'], 's'.repeat(40), 'el token ya gastado no se reenvía');
+});
+
+test('propaga un X-Request-Id válido y genera uno si llega inválido', async () => {
+    let res = respuesta();
+    await handler(peticion({ headers: { ...cabecerasValidas, 'x-request-id': 'landing-abc.123' } }), res);
+    assert.equal(res.headers['x-request-id'], 'landing-abc.123');
+    assert.equal(llamadas.find((l) => l.url === DESTINO).opciones.headers['X-Request-Id'], 'landing-abc.123');
+    simularFetch();
+    res = respuesta();
+    await handler(peticion({ headers: { ...cabecerasValidas, 'x-request-id': 'x\r\nSet-Cookie: a=b' } }), res);
+    assert.match(res.headers['x-request-id'], /^[a-f0-9]{16}$/);
+});
+
+test('normaliza el cuerpo: NFC, sin controles ni marcas bidi, correo en minúsculas; SQLi y HTML viajan como texto', async () => {
+    const res = respuesta();
+    const cuerpo = {
+        ...CUERPO_VALIDO,
+        nombre: "  Jose\u0301 \u202Eevil\u0000 Robert'); DROP TABLE leads;--  ",
+        correo: 'Ana@Example.COM',
+        mensaje: '<script>alert(1)</script>\r\nhola'
+    };
+    await handler(peticion({ headers: cabecerasValidas, body: JSON.stringify(cuerpo) }), res);
+    assert.equal(res.statusCode, 201);
+    const enviado = JSON.parse(llamadas.find((l) => l.url === DESTINO).opciones.body);
+    assert.equal(enviado.nombre, "José evil Robert'); DROP TABLE leads;--");
+    assert.equal(enviado.correo, 'ana@example.com');
+    assert.equal(enviado.mensaje, '<script>alert(1)</script>\nhola');
+});
+
+for (const [caso, cambio] of [
+    ['clave no permitida', { __proto__x: 1, admin: true }],
+    ['nombre de 201 caracteres', { nombre: 'a'.repeat(201) }],
+    ['nombre no texto', { nombre: { $ne: '' } }],
+    ['correo con espacio', { correo: 'a b@c.cl' }],
+    ['teléfono con letras', { telefono: '+56 9 1234 abcd' }],
+    ['teléfono con HTML', { telefono: '<b>912345678</b>' }],
+    ['huéspedes 0', { huespedes: 0 }],
+    ['huéspedes 31', { huespedes: 31 }],
+    ['huéspedes texto', { huespedes: '2' }],
+    ['fecha imposible', { check_in: '2030-02-30', check_out: '2030-03-02' }],
+    ['XSS en fecha', { check_in: '<img src=x onerror=alert(1)>', check_out: '2030-03-02' }],
+    ['salida antes de llegada', { check_in: '2030-03-05', check_out: '2030-03-02' }],
+    ['más de 30 noches', { check_in: '2030-03-01', check_out: '2030-04-15' }],
+    ['solo una fecha', { check_in: '2030-03-01' }],
+    ['mensaje de 2001', { mensaje: 'x'.repeat(2001) }]
+]) {
+    test(`entrada inválida (${caso}) → 422 sin gastar reCAPTCHA ni llegar a DESTINO`, async () => {
+        const res = respuesta();
+        await handler(peticion({ headers: cabecerasValidas, body: JSON.stringify({ ...CUERPO_VALIDO, ...cambio }) }), res);
+        assert.equal(res.statusCode, 422);
+        assert.equal(llamadas.length, 0);
+    });
+}
+
+test('cuerpo que no es JSON u objeto → 422', async () => {
+    for (const body of ['no-json', '[1,2]', 'null', '"texto"']) {
+        simularFetch();
+        const res = respuesta();
+        await handler(peticion({ headers: cabecerasValidas, body }), res);
+        assert.equal(res.statusCode, 422, body);
+    }
+});
+
+test('el log estructurado no contiene datos personales, tokens ni secreto', async () => {
+    const lineas = [];
+    const original = console.log;
+    console.log = (l) => lineas.push(l);
+    try {
+        const res = respuesta();
+        await handler(peticion({ headers: { ...cabecerasValidas, 'x-recaptcha-token-servicio': 's'.repeat(40) } }), res);
+    } finally {
+        console.log = original;
+    }
+    assert.equal(lineas.length, 1);
+    const evento = JSON.parse(lineas[0]);
+    assert.equal(evento.estado, 201);
+    assert.equal(evento.resultado, 'ok');
+    assert.equal(typeof evento.ms, 'number');
+    for (const prohibido of ['Ana', 'ana@example.com', '1234', 'tttt', 'ssss', 'secreto-de-prueba']) {
+        assert.ok(!lineas[0].includes(prohibido), prohibido);
+    }
 });
