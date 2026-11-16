@@ -273,6 +273,8 @@ function tokenRecaptcha(accion) {
         return Promise.resolve('');
     }
 
+    prepararRecaptcha();
+
     const pedir = () => new Promise((resolve, reject) => {
         const inicio = Date.now();
 
@@ -315,7 +317,38 @@ function mensajeFalloCaptcha() {
     return 'No se pudo verificar el envío. Actualiza la página o escríbenos por teléfono o WhatsApp.';
 }
 
-prepararRecaptcha();
+/*
+ * SEO/rendimiento: reCAPTCHA (~180 KB de JS de terceros) ya no se descarga durante la carga inicial.
+ * Se carga en la primera interacción del usuario (scroll, toque, tecla o foco en el formulario)
+ * o, como respaldo, unos segundos después de terminar la carga. tokenRecaptcha() también lo carga
+ * si aún no estaba, y ya espera hasta 8 s a que grecaptcha esté listo.
+ */
+function cargarRecaptchaDiferido() {
+    const eventos = ['scroll', 'pointerdown', 'keydown', 'touchstart', 'focusin'];
+    let cargado = false;
+
+    const cargar = () => {
+        if (cargado) {
+            return;
+        }
+
+        cargado = true;
+        eventos.forEach((evento) => window.removeEventListener(evento, cargar, true));
+        prepararRecaptcha();
+    };
+
+    eventos.forEach((evento) => window.addEventListener(evento, cargar, { capture: true, passive: true, once: true }));
+
+    const respaldo = () => window.setTimeout(cargar, 4000);
+
+    if (document.readyState === 'complete') {
+        respaldo();
+    } else {
+        window.addEventListener('load', respaldo, { once: true });
+    }
+}
+
+cargarRecaptchaDiferido();
 
 function urlPlataforma() {
     return String(window.LANDING_PLATAFORMA_URL || 'https://plataforma-salman-herencia-oficial.vercel.app').replace(/\/+$/, '');

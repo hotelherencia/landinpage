@@ -1,4 +1,47 @@
-User-agent: *
-Allow: /
+# Hotel Herencia - https://www.hotelherencia.cl/
+# Política: se permite la búsqueda (incluidas las funciones de IA de Google Search y los
+# buscadores con IA), pero NO el uso del contenido para entrenar modelos de IA.
+# Googlebot NO se bloquea: es necesario para Google Search, AI Overviews y AI Mode.
+# Google-Extended solo controla el uso en Gemini/Vertex AI, no afecta a Google Search.
 
-Sitemap: https://hotelherencia.cl/sitemap.xml
+# Señales de contenido (https://contentsignals.org/)
+# search: indexar y mostrar resultados | ai-input: usar en respuestas en tiempo real | ai-train: entrenar modelos
+User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Disallow: /api/
+
+# Rastreadores de entrenamiento de IA: bloqueados
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: anthropic-ai
+User-agent: CCBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: Bytespider
+User-agent: meta-externalagent
+User-agent: Meta-ExternalAgent
+User-agent: FacebookBot
+User-agent: Amazonbot
+User-agent: cohere-ai
+User-agent: cohere-training-data-crawler
+User-agent: Diffbot
+User-agent: omgili
+User-agent: ImagesiftBot
+User-agent: PetalBot
+User-agent: Timpibot
+User-agent: AI2Bot
+User-agent: img2dataset
+Disallow: /
+
+# Buscadores con IA (citan y enlazan el sitio): permitidos, salvo la API
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+Allow: /
+Disallow: /api/
+
+Sitemap: https://www.hotelherencia.cl/sitemap.xml

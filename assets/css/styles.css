@@ -938,3 +938,64 @@ button {
         padding: 1.15rem;
     }
 }
+
+/* Pie de página con NAP (nombre, dirección, teléfono) para SEO local y enlaces internos */
+.site-footer {
+    padding: 2.5rem 0 3rem;
+    border-top: 1px solid var(--line);
+    color: var(--ink-muted);
+    font-size: 0.95rem;
+}
+
+.site-footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1.5rem 3rem;
+}
+
+.site-footer p {
+    margin: 0.2rem 0;
+}
+
+.site-footer__name {
+    color: var(--brand);
+    font-weight: 800;
+}
+
+.site-footer a {
+    margin-top: 0;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.site-footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 0.5rem 1.25rem;
+    max-width: 36rem;
+}
+
+@media (max-width: 1024px) {
+    .section--contact {
+        padding-bottom: 4.25rem;
+    }
+
+    .site-footer {
+        padding-bottom: 8rem;
+    }
+}
+
+/* Fecha de revisión visible bajo "Datos clave" (señal de frescura) */
+.section-updated {
+    margin: 1.5rem 0 0;
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+}
+
+.feature-card a {
+    margin-top: 0;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}

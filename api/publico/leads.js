@@ -4,6 +4,8 @@ const TOPE_RESPUESTA = 65536;
 const SITEVERIFY = 'https://www.google.com/recaptcha/api/siteverify';
 // Host del <link rel="canonical"> de index.html. RECAPTCHA_HOSTNAMES solo amplía.
 const HOST_CANONICO = 'hotelherencia.cl';
+// Producción responde en www (el dominio raíz redirige 308 a www), así que el token llega con hostname www.
+const HOST_WWW = 'www.hotelherencia.cl';
 const ANTIGUEDAD_MAXIMA_MS = 120000;
 
 function cabeceraUnica(valor) {
@@ -15,7 +17,7 @@ function hostsPermitidos() {
         .split(',')
         .map((host) => host.trim().toLowerCase())
         .filter(Boolean);
-    return [HOST_CANONICO, ...extra];
+    return [HOST_CANONICO, HOST_WWW, ...extra];
 }
 
 function puntajeSuficiente(score) {

@@ -11,78 +11,249 @@
     <meta name="theme-color" content="#173326">
     <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' 'sha256-/x7W7R75k8Roq0WaVRQX9blP4OufE5xbAdzklGxsgpw=' https://www.google.com https://www.gstatic.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; img-src 'self' https://www.google.com https://www.gstatic.com; frame-src https://www.google.com https://recaptcha.google.com; connect-src 'self' https://plataforma-salman-herencia-oficial.vercel.app https://www.google.com; worker-src 'self' blob:">
-    <link rel="canonical" href="https://hotelherencia.cl/">
-    <link rel="alternate" hreflang="es-CL" href="https://hotelherencia.cl/">
-    <link rel="alternate" hreflang="x-default" href="https://hotelherencia.cl/">
+    <link rel="canonical" href="https://www.hotelherencia.cl/">
+    <link rel="alternate" hreflang="es-CL" href="https://www.hotelherencia.cl/">
+    <link rel="alternate" hreflang="x-default" href="https://www.hotelherencia.cl/">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Hotel Herencia">
     <meta property="og:locale" content="es_CL">
     <meta property="og:title" content="Hotel en Chillán | Hotel Herencia cerca del centro">
     <meta property="og:description"
         content="Hotel en Chillán con desayuno, estacionamiento, WiFi y habitaciones cómodas cerca del centro y la estación de trenes.">
-    <meta property="og:url" content="https://hotelherencia.cl/">
-    <meta property="og:image" content="https://hotelherencia.cl/assets/img/hotel-herencia.jpg">
-    <meta property="og:image:width" content="1024">
-    <meta property="og:image:height" content="685">
-    <meta property="og:image:alt" content="Hotel Herencia en Chillán">
+    <meta property="og:url" content="https://www.hotelherencia.cl/">
+    <meta property="og:image" content="https://www.hotelherencia.cl/assets/img/hotel-herencia.jpg">
+    <!-- TODO(dueño): reemplazar por una imagen de 1200x630 px (o mayor, proporción 1,91:1) para mejores vistas previas en WhatsApp/Facebook/Google Discover. La actual mide 475x476 px. -->
+    <meta property="og:image:width" content="475">
+    <meta property="og:image:height" content="476">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:alt" content="Exterior del Hotel Herencia en Chillán con jardines y fachada principal">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Hotel en Chillán | Hotel Herencia cerca del centro">
     <meta name="twitter:description"
         content="Hotel en Chillán con desayuno, estacionamiento, WiFi y habitaciones cómodas cerca del centro y la estación.">
-    <meta name="twitter:image" content="https://hotelherencia.cl/assets/img/hotel-herencia.jpg">
+    <meta name="twitter:image" content="https://www.hotelherencia.cl/assets/img/hotel-herencia.jpg">
     <meta name="twitter:image:alt" content="Fachada principal de Hotel Herencia en Chillán">
-    <link rel="icon" type="image/x-icon" href="assets/img/herencia_favicon.ico">
+    <link rel="icon" type="image/x-icon" href="/assets/img/herencia_favicon.ico">
+    <!-- TODO(dueño): agregar un favicon de al menos 48x48 px (ideal 192x192 PNG/SVG) y apple-touch-icon 180x180; Google exige múltiplos de 48 px para mostrarlo en resultados. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&amp;family=Manrope:wght@400;700;800&amp;display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="assets/css/styles.css">
     <script>document.documentElement.classList.add('js');</script>
+    <!--
+      TODO(dueño) para completar el JSON-LD del hotel (no se inventaron datos; agregar solo valores confirmados):
+      - "geo": {"@type": "GeoCoordinates", "latitude": ..., "longitude": ...}  (copiar desde Google Business Profile / Google Maps)
+      - "postalCode" dentro de "address"
+      - "priceRange" (ej. "$$" o rango en CLP), "checkinTime" / "checkoutTime" (ej. "15:00" / "12:00")
+      - "email" de recepción, "numberOfRooms", "petsAllowed", "starRating" (solo si existe clasificación oficial SERNATUR)
+      - "logo": se generó assets/img/logo-herencia-512.jpg (512x512, RGB, 16 KB) desde logo_herencia.jpg; reemplazar por el archivo oficial en PNG/SVG si existe.
+      - "alternateName": "Herencia Hotel Boutique" sale del logo; confirmar que es el nombre comercial que quieren usar.
+      - Agregar a "sameAs" la ficha de Google Business Profile, Booking, Facebook, TripAdvisor u otros perfiles oficiales.
+      - No agregar "aggregateRating" con la nota de Booking: Google no acepta valoraciones de terceros autoservidas en el propio sitio.
+    -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "Hotel",
-      "name": "Hotel Herencia",
-      "url": "https://hotelherencia.cl/",
-      "mainEntityOfPage": "https://hotelherencia.cl/",
-      "description": "Hotel en Chillán con desayuno, estacionamiento, WiFi y habitaciones cómodas cerca del centro, la Plaza de Armas y la estación de trenes.",
-      "image": "https://hotelherencia.cl/assets/img/hotel-herencia.jpg",
-      "hasMap": "https://maps.app.goo.gl/XYgS4ZHtKSHauBpj8",
-      "areaServed": [
-        "Chillán",
-        "Región de Ñuble"
-      ],
-      "availableLanguage": [
-        "es"
-      ],
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "Calle Diego de Almagro 751",
-        "addressLocality": "Chillán",
-        "addressRegion": "Ñuble",
-        "addressCountry": "CL"
-      },
-      "amenityFeature": [
+      "@graph": [
         {
-          "@type": "LocationFeatureSpecification",
-          "name": "WiFi",
-          "value": true
+          "@type": "Organization",
+          "@id": "https://www.hotelherencia.cl/#organization",
+          "name": "Herencia SpA",
+          "legalName": "Herencia SpA",
+          "taxID": "76.707.504-9",
+          "url": "https://www.hotelherencia.cl/",
+          "logo": {
+            "@id": "https://www.hotelherencia.cl/#logo"
+          },
+          "telephone": "+56956491501",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "5 de Abril 441, oficina 3",
+            "addressLocality": "Chillán",
+            "addressRegion": "Ñuble",
+            "addressCountry": "CL"
+          },
+          "brand": {
+            "@id": "https://www.hotelherencia.cl/#hotel"
+          }
         },
         {
-          "@type": "LocationFeatureSpecification",
-          "name": "Estacionamiento",
-          "value": true
+          "@type": "ImageObject",
+          "@id": "https://www.hotelherencia.cl/#logo",
+          "url": "https://www.hotelherencia.cl/assets/img/logo-herencia-512.jpg",
+          "contentUrl": "https://www.hotelherencia.cl/assets/img/logo-herencia-512.jpg",
+          "width": 512,
+          "height": 512,
+          "caption": "Logo de Herencia Hotel Boutique"
         },
         {
-          "@type": "LocationFeatureSpecification",
-          "name": "Desayuno",
-          "value": true
+          "@type": "WebSite",
+          "@id": "https://www.hotelherencia.cl/#website",
+          "url": "https://www.hotelherencia.cl/",
+          "name": "Hotel Herencia",
+          "inLanguage": "es-CL",
+          "publisher": {
+            "@id": "https://www.hotelherencia.cl/#organization"
+          },
+          "alternateName": "Herencia Hotel Boutique"
         },
         {
-          "@type": "LocationFeatureSpecification",
-          "name": "Aire acondicionado",
-          "value": true
+          "@type": "WebPage",
+          "@id": "https://www.hotelherencia.cl/#webpage",
+          "url": "https://www.hotelherencia.cl/",
+          "name": "Hotel en Chillán | Hotel Herencia cerca del centro",
+          "isPartOf": {
+            "@id": "https://www.hotelherencia.cl/#website"
+          },
+          "about": {
+            "@id": "https://www.hotelherencia.cl/#hotel"
+          },
+          "inLanguage": "es-CL",
+          "primaryImageOfPage": "https://www.hotelherencia.cl/assets/img/hotel-herencia.jpg",
+            "dateModified": "2026-11-16",
+          "description": "Hotel en Chillán con desayuno, estacionamiento, WiFi y habitaciones cómodas cerca del centro, la Plaza de Armas y la estación de trenes.",
+          "publisher": {
+            "@id": "https://www.hotelherencia.cl/#organization"
+          },
+          "mainEntity": {
+            "@id": "https://www.hotelherencia.cl/#hotel"
+          }
+        },
+        {
+          "@type": "Hotel",
+          "@id": "https://www.hotelherencia.cl/#hotel",
+          "name": "Hotel Herencia",
+          "alternateName": "Herencia Hotel Boutique",
+          "url": "https://www.hotelherencia.cl/",
+          "mainEntityOfPage": {
+            "@id": "https://www.hotelherencia.cl/#webpage"
+          },
+          "description": "Hotel en Chillán con desayuno, estacionamiento, WiFi y habitaciones cómodas cerca del centro, la Plaza de Armas y la estación de trenes.",
+          "image": [
+            "https://www.hotelherencia.cl/assets/img/hotel-herencia.jpg",
+            "https://www.hotelherencia.cl/assets/img/124823346.jpg",
+            "https://www.hotelherencia.cl/assets/img/124822057.jpg",
+            "https://www.hotelherencia.cl/assets/img/124825882.jpg",
+            "https://www.hotelherencia.cl/assets/img/124824164.jpg",
+            "https://www.hotelherencia.cl/assets/img/cocina.jpg"
+          ],
+          "telephone": "+56956491501",
+          "hasMap": "https://maps.app.goo.gl/XYgS4ZHtKSHauBpj8",
+          "sameAs": [
+            "https://www.instagram.com/hotelherencia/",
+            "https://maps.app.goo.gl/XYgS4ZHtKSHauBpj8"
+          ],
+          "areaServed": [
+            "Chillán",
+            "Región de Ñuble"
+          ],
+          "availableLanguage": [
+            "es"
+          ],
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Calle Diego de Almagro 751",
+            "addressLocality": "Chillán",
+            "addressRegion": "Ñuble",
+            "addressCountry": "CL"
+          },
+          "amenityFeature": [
+            {
+              "@type": "LocationFeatureSpecification",
+              "name": "WiFi",
+              "value": true
+            },
+            {
+              "@type": "LocationFeatureSpecification",
+              "name": "Estacionamiento",
+              "value": true
+            },
+            {
+              "@type": "LocationFeatureSpecification",
+              "name": "Desayuno",
+              "value": true
+            },
+            {
+              "@type": "LocationFeatureSpecification",
+              "name": "Aire acondicionado",
+              "value": true
+            },
+            {
+              "@type": "LocationFeatureSpecification",
+              "name": "Terraza en habitaciones",
+              "value": true
+            },
+            {
+              "@type": "LocationFeatureSpecification",
+              "name": "Servicio de habitaciones",
+              "value": true
+            },
+            {
+              "@type": "LocationFeatureSpecification",
+              "name": "Habitaciones familiares",
+              "value": true
+            }
+          ],
+          "containsPlace": [
+            {
+              "@type": "HotelRoom",
+              "name": "Habitación Doble Pequeña",
+              "description": "Habitación con dos camas individuales.",
+              "bed": {
+                "@type": "BedDetails",
+                "numberOfBeds": 2,
+                "typeOfBed": "Cama individual"
+              },
+              "image": [
+                "https://www.hotelherencia.cl/assets/img/124823346.jpg",
+                "https://www.hotelherencia.cl/assets/img/124823348.jpg"
+              ]
+            },
+            {
+              "@type": "HotelRoom",
+              "name": "Habitación con Cama Grande",
+              "description": "Habitación con cama grande, veladores laterales, clóset y baño.",
+              "bed": {
+                "@type": "BedDetails",
+                "numberOfBeds": 1,
+                "typeOfBed": "Cama grande"
+              },
+              "image": [
+                "https://www.hotelherencia.cl/assets/img/124822057.jpg",
+                "https://www.hotelherencia.cl/assets/img/124822020.jpg"
+              ]
+            }
+          ],
+          "logo": {
+            "@id": "https://www.hotelherencia.cl/#logo"
+          },
+          "parentOrganization": {
+            "@id": "https://www.hotelherencia.cl/#organization"
+          },
+          "containedInPlace": {
+            "@type": "City",
+            "name": "Chillán",
+            "containedInPlace": {
+              "@type": "AdministrativeArea",
+              "name": "Región de Ñuble",
+              "containedInPlace": {
+                "@type": "Country",
+                "name": "Chile"
+              }
+            }
+          },
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+56956491501",
+            "contactType": "reservations",
+            "areaServed": "CL",
+            "availableLanguage": [
+              "es"
+            ]
+          },
+          "publicAccess": true
         }
       ]
     }
@@ -91,13 +262,17 @@
     {
       "@context": "https://schema.org",
       "@type": "FAQPage",
+      "@id": "https://www.hotelherencia.cl/#faq",
+      "isPartOf": {
+        "@id": "https://www.hotelherencia.cl/#webpage"
+      },
       "mainEntity": [
         {
           "@type": "Question",
           "name": "¿Dónde se ubica Hotel Herencia en Chillán?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Hotel Herencia se ubica en Calle Diego de Almagro 751, Chillán, a aproximadamente 1,5 a 1,7 kilómetros de la Plaza de Armas y a 2,8 kilómetros de la estación de trenes."
+            "text": "Estamos en Calle Diego de Almagro 751, Chillán, a aproximadamente 1,5 a 1,7 km de la Plaza de Armas y a 2,8 km de la estación de trenes."
           }
         },
         {
@@ -105,7 +280,7 @@
           "name": "¿El hotel cuenta con estacionamiento?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Sí. Hotel Herencia dispone de estacionamiento para facilitar la llegada y salida de huéspedes que viajan en auto dentro de Chillán."
+            "text": "Sí. Hotel Herencia dispone de estacionamiento para facilitar la llegada y salida de huéspedes que viajan en auto."
           }
         },
         {
@@ -113,7 +288,7 @@
           "name": "¿La estadía incluye desayuno?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Sí. El hotel ofrece desayuno junto con WiFi, aire acondicionado y una propuesta pensada para una estadía cómoda en Chillán."
+            "text": "Sí. El hotel ofrece desayuno junto con WiFi y aire acondicionado para una experiencia de estadía cómoda en Chillán."
           }
         },
         {
@@ -121,7 +296,7 @@
           "name": "¿Qué tipos de habitaciones ofrece Hotel Herencia?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "En la página se muestran la Habitación Doble Pequeña con dos camas individuales y la Habitación con Cama Grande, ambas pensadas para viajes de descanso o trabajo."
+            "text": "Contamos con la Habitación Doble Pequeña con dos camas individuales y la Habitación con Cama Grande, pensadas para descanso o viajes de trabajo."
           }
         },
         {
@@ -129,7 +304,55 @@
           "name": "¿Cómo consultar disponibilidad o reservar?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Puedes enviar tus fechas, cantidad de huéspedes y requerimientos desde el formulario de contacto de esta página. Respondemos a la brevedad."
+            "text": "Puedes enviar tus fechas, cantidad de huéspedes y requerimientos desde el formulario de contacto. También puedes llamar o escribir por WhatsApp al +56 9 5649 1501. Respondemos a la brevedad."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Qué hay cerca de Hotel Herencia?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "El hotel está a pasos de Avenida Argentina, punto neurálgico de la cultura gastronómica y recreativa de Chillán, a aproximadamente 1,5 a 1,7 km de la Plaza de Armas y a 2,8 km de la estación de trenes."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Qué servicios incluye Hotel Herencia?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Desayuno, WiFi, estacionamiento, aire acondicionado, terraza en habitaciones, servicio de habitaciones y habitaciones familiares. Además cuenta con recepción, salas interiores, comedor y cocina equipada."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Hay habitaciones para familias?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí. Hotel Herencia ofrece habitaciones familiares. Indica el número de huéspedes en el formulario o por WhatsApp y recepción te confirmará la opción disponible para tus fechas."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Es un hotel adecuado para viajes de trabajo?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí. Las habitaciones están pensadas para estadías laborales o de descanso, con WiFi, aire acondicionado, desayuno y estacionamiento, y la ubicación permite llegar con facilidad al centro de Chillán y a la estación de trenes."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Enviar el formulario confirma la reserva?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. El formulario envía tu consulta o solicitud a recepción, que la revisa y te contacta por el medio que indicaste. La estadía queda confirmada solo cuando recepción la confirma."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cómo contacto a recepción de Hotel Herencia?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Por teléfono o WhatsApp al +56 9 5649 1501, por Instagram (@hotelherencia) o con el formulario de contacto de esta página."
           }
         }
       ]
@@ -172,7 +395,7 @@
                     <div class="hero__photo-frame">
                         <img src="assets/img/hotel-herencia.jpg"
                             alt="Exterior del Hotel Herencia con jardines y fachada principal" class="hero__photo"
-                            width="1200" height="1500" fetchpriority="high">
+                            width="475" height="476" fetchpriority="high">
                     </div>
                     <figcaption class="hero__media-note">
                         Habitaciones cómodas, espacios acogedores y una ubicación práctica para recorrer Chillán.
@@ -189,11 +412,78 @@
             </div>
         </section>
 
+        <!--
+          Sección "Datos clave": respuestas breves y verificables pensadas para buscadores y funciones de IA
+          (AI Overviews / AI Mode). Usa solo datos que ya estaban publicados en el sitio.
+          TODO(dueño): agregar horario de check-in y check-out, año de apertura / historia del hotel y
+          quién lo dirige (nombre de la familia o administración), si se quiere mostrar públicamente.
+        -->
+        <section class="section section--benefits" id="datos-clave" aria-labelledby="datos-clave-titulo">
+            <div class="container">
+                <div class="section-heading" data-reveal>
+                    <p class="eyebrow">Hotel Herencia en breve</p>
+                    <h2 id="datos-clave-titulo">Datos clave de Hotel Herencia en Chillán</h2>
+                    <p>
+                        Hotel Herencia es un hotel boutique en Chillán, Región de Ñuble (Chile), ubicado en Calle Diego
+                        de Almagro 751, a pasos de Avenida Argentina. Ofrece desayuno, estacionamiento, WiFi y aire
+                        acondicionado, y las consultas de reserva las responde directamente su recepción.
+                    </p>
+                </div>
+
+                <div class="benefits-grid">
+                    <article class="feature-card" data-reveal>
+                        <p class="feature-card__kicker">Dirección</p>
+                        <h3>Calle Diego de Almagro 751, Chillán</h3>
+                        <p>
+                            Región de Ñuble, Chile, a pasos de Avenida Argentina, punto neurálgico de la cultura gastronómica y recreativa de Chillán.
+                        </p>
+                    </article>
+                    <article class="feature-card" data-reveal>
+                        <p class="feature-card__kicker">Distancias</p>
+                        <h3>Cerca del centro y de la estación</h3>
+                        <p>
+                            Aproximadamente 1,5 a 1,7 km de la Plaza de Armas y 2,8 km de la estación de trenes de Chillán.
+                        </p>
+                    </article>
+                    <article class="feature-card" data-reveal>
+                        <p class="feature-card__kicker">Servicios</p>
+                        <h3>Desayuno, WiFi y estacionamiento</h3>
+                        <p>
+                            También aire acondicionado, terraza en habitaciones, servicio de habitaciones y habitaciones familiares.
+                        </p>
+                    </article>
+                    <article class="feature-card" data-reveal>
+                        <p class="feature-card__kicker">Habitaciones</p>
+                        <h3>Doble Pequeña y Cama Grande</h3>
+                        <p>
+                            Habitación Doble Pequeña con dos camas individuales y Habitación con Cama Grande. Espacios comunes: recepción, salas interiores, comedor y cocina equipada.
+                        </p>
+                    </article>
+                    <article class="feature-card" data-reveal>
+                        <p class="feature-card__kicker">Reservas</p>
+                        <h3>Consulta directa con recepción</h3>
+                        <p>
+                            Envía tus fechas y número de huéspedes por el formulario, por teléfono o por WhatsApp. Recepción revisa cada solicitud: enviar el formulario no confirma la estadía.
+                        </p>
+                    </article>
+                    <article class="feature-card" data-reveal>
+                        <p class="feature-card__kicker">Quién lo opera</p>
+                        <h3>Herencia SpA, empresa de Chillán</h3>
+                        <p>
+                            Hotel Herencia es operado por Herencia SpA (RUT 76.707.504-9). Recepción atiende en el <a href="tel:+56956491501">+56 9 5649 1501</a> (teléfono y WhatsApp).
+                        </p>
+                    </article>
+                </div>
+
+                <p class="section-updated">Información revisada el <time datetime="2026-11-16">16 de noviembre de 2026</time>.</p>
+            </div>
+        </section>
+
         <section class="section section--location" id="ubicacion">
             <div class="container location">
                 <div class="location__copy" data-reveal>
                     <p class="eyebrow">Ubicación</p>
-                    <h2>Hotel en Chillán con ubicación práctica</h2>
+                    <h2>¿Dónde está Hotel Herencia en Chillán?</h2>
                     <p>
                         Si buscas un hotel en Chillán cerca del centro, nuestra ubicación combina acceso práctico a la
                         Plaza de Armas, conectividad con la estación de trenes y cercanía a servicios para moverte con
@@ -207,7 +497,7 @@
                         </article>
                         <article>
                             <p class="location__label">Centro y estación</p>
-                            <p>Nos encontramos a aproximadamente 1,5 a kilómetros de la Plaza de Armas y a 2,8
+                            <p>Nos encontramos a aproximadamente 1,5 a 1,7 kilómetros de la Plaza de Armas y a 2,8
                                 kilómetros de la estación de trenes de Chillán.</p>
                         </article>
                     </div>
@@ -220,7 +510,7 @@
 
                 <div class="map-card" data-reveal aria-hidden="true">
                     <img class="location__image" src="assets/img/maps.png"
-                        alt="Mapa de ubicación de Hotel Herencia en Chillán" width="745" height="475" loading="lazy">
+                        alt="Mapa de ubicación de Hotel Herencia en Chillán" width="745" height="475" loading="lazy" decoding="async">
                 </div>
             </div>
         </section>
@@ -229,7 +519,7 @@
             <div class="container">
                 <div class="section-heading" data-reveal>
                     <p class="eyebrow">Servicios</p>
-                    <h2>Servicios y ventajas para tu estadía en Chillán</h2>
+                    <h2>¿Qué servicios tiene Hotel Herencia en Chillán?</h2>
                     <p>
                         Hotel Herencia reúne atributos que suelen definir la elección de un hotel en Chillán:
                         ubicación práctica, desayuno, estacionamiento, WiFi y habitaciones cómodas para descansar o
@@ -273,7 +563,7 @@
             <div class="container">
                 <div class="section-heading" data-reveal>
                     <p class="eyebrow">Habitaciones</p>
-                    <h2>Habitaciones para tu estadía en Chillán</h2>
+                    <h2>¿Qué habitaciones ofrece Hotel Herencia?</h2>
                     <p>
                         Conoce opciones de habitación para quienes buscan un hotel en Chillán con buena ubicación,
                         ambiente cálido y una experiencia de descanso simple.
@@ -294,7 +584,7 @@
                                         <figure class="room-slide__media">
                                             <img src="assets/img/124823346.jpg"
                                                 alt="Habitación doble pequeña con dos camas individuales, velador central y lámpara"
-                                                width="1024" height="685" loading="eager">
+                                                width="1024" height="685" loading="lazy" decoding="async">
                                             <figcaption class="room-slide__caption">Vista general</figcaption>
                                         </figure>
                                     </article>
@@ -303,7 +593,7 @@
                                         <figure class="room-slide__media">
                                             <img src="assets/img/124823348.jpg"
                                                 alt="Vista frontal de la habitación doble pequeña con dos camas individuales"
-                                                width="1024" height="685" loading="lazy">
+                                                width="1024" height="685" loading="lazy" decoding="async">
                                             <figcaption class="room-slide__caption">Vista frontal</figcaption>
                                         </figure>
                                     </article>
@@ -348,7 +638,7 @@
                                         <figure class="room-slide__media">
                                             <img src="assets/img/124822057.jpg"
                                                 alt="Habitación con cama grande, veladores laterales y lámparas encendidas"
-                                                width="1024" height="685" loading="lazy">
+                                                width="1024" height="685" loading="lazy" decoding="async">
                                             <figcaption class="room-slide__caption">Cama principal</figcaption>
                                         </figure>
                                     </article>
@@ -357,7 +647,7 @@
                                         <figure class="room-slide__media">
                                             <img src="assets/img/124822020.jpg"
                                                 alt="Vista interior de la habitación con cama grande, clóset y acceso al baño"
-                                                width="1024" height="685" loading="lazy">
+                                                width="1024" height="685" loading="lazy" decoding="async">
                                             <figcaption class="room-slide__caption">Interior y baño</figcaption>
                                         </figure>
                                     </article>
@@ -408,7 +698,7 @@
                                     <figure class="room-slide__media">
                                         <img src="assets/img/124824164.jpg"
                                             alt="Sala interior del hotel con sofá, sillón y decoración" width="1024"
-                                            height="685" loading="lazy">
+                                            height="685" loading="lazy" decoding="async">
                                         <figcaption class="room-slide__caption">Espacio interior</figcaption>
                                     </figure>
                                 </article>
@@ -417,7 +707,7 @@
                                     <figure class="room-slide__media">
                                         <img src="assets/img/124825874.jpg"
                                             alt="Sala interior del hotel con sofá turquesa y mesa auxiliar" width="1024"
-                                            height="685" loading="lazy">
+                                            height="685" loading="lazy" decoding="async">
                                         <figcaption class="room-slide__caption">Sala interior</figcaption>
                                     </figure>
                                 </article>
@@ -426,7 +716,7 @@
                                     <figure class="room-slide__media">
                                         <img src="assets/img/124825882.jpg"
                                             alt="Recepción interior del hotel con sofá y mostrador" width="1024"
-                                            height="685" loading="lazy">
+                                            height="685" loading="lazy" decoding="async">
                                         <figcaption class="room-slide__caption">Recepción</figcaption>
                                     </figure>
                                 </article>
@@ -435,7 +725,7 @@
                                     <figure class="room-slide__media">
                                         <img src="assets/img/cocina.jpg"
                                             alt="Comedor común de Hotel Herencia con mesas y sillas" width="1024" height="685"
-                                            loading="lazy">
+                                            loading="lazy" decoding="async">
                                         <figcaption class="room-slide__caption">Comedor</figcaption>
                                     </figure>
                                 </article>
@@ -444,7 +734,7 @@
                                     <figure class="room-slide__media">
                                         <img src="assets/img/124824018.jpg"
                                             alt="Cocina equipada de Hotel Herencia con barra y electrodomésticos" width="1024" height="685"
-                                            loading="lazy">
+                                            loading="lazy" decoding="async">
                                         <figcaption class="room-slide__caption">Cocina equipada</figcaption>
                                     </figure>
                                 </article>
@@ -534,9 +824,55 @@
                         <h3>¿Cómo consultar disponibilidad o reservar?</h3>
                         <p>
                             Puedes enviar tus fechas, cantidad de huéspedes y requerimientos desde el formulario de
-                            contacto. Respondemos a la brevedad.
+                            contacto. También puedes llamar o escribir por WhatsApp al
+                            <a href="tel:+56956491501">+56 9 5649 1501</a>. Respondemos a la brevedad.
                         </p>
                     </article>
+
+                    <article class="feature-card faq-card" data-reveal>
+                        <h3>¿Qué hay cerca de Hotel Herencia?</h3>
+                        <p>
+                            El hotel está a pasos de Avenida Argentina, punto neurálgico de la cultura gastronómica y recreativa de Chillán, a aproximadamente 1,5 a 1,7 km de la Plaza de Armas y a 2,8 km de la estación de trenes.
+                        </p>
+                    </article>
+
+                    <article class="feature-card faq-card" data-reveal>
+                        <h3>¿Qué servicios incluye Hotel Herencia?</h3>
+                        <p>
+                            Desayuno, WiFi, estacionamiento, aire acondicionado, terraza en habitaciones, servicio de habitaciones y habitaciones familiares. Además cuenta con recepción, salas interiores, comedor y cocina equipada.
+                        </p>
+                    </article>
+
+                    <article class="feature-card faq-card" data-reveal>
+                        <h3>¿Hay habitaciones para familias?</h3>
+                        <p>
+                            Sí. Hotel Herencia ofrece habitaciones familiares. Indica el número de huéspedes en el formulario o por WhatsApp y recepción te confirmará la opción disponible para tus fechas.
+                        </p>
+                    </article>
+
+                    <article class="feature-card faq-card" data-reveal>
+                        <h3>¿Es un hotel adecuado para viajes de trabajo?</h3>
+                        <p>
+                            Sí. Las habitaciones están pensadas para estadías laborales o de descanso, con WiFi, aire acondicionado, desayuno y estacionamiento, y la ubicación permite llegar con facilidad al centro de Chillán y a la estación de trenes.
+                        </p>
+                    </article>
+
+                    <article class="feature-card faq-card" data-reveal>
+                        <h3>¿Enviar el formulario confirma la reserva?</h3>
+                        <p>
+                            No. El formulario envía tu consulta o solicitud a recepción, que la revisa y te contacta por el medio que indicaste. La estadía queda confirmada solo cuando recepción la confirma.
+                        </p>
+                    </article>
+
+                    <article class="feature-card faq-card" data-reveal>
+                        <h3>¿Cómo contacto a recepción de Hotel Herencia?</h3>
+                        <p>
+                            Por teléfono o WhatsApp al <a href="tel:+56956491501">+56 9 5649 1501</a>, por Instagram (@hotelherencia) o con el formulario de contacto de esta página.
+                        </p>
+                    </article>
+
+                    <!-- TODO(dueño): agregar "¿A qué hora es el check-in y el check-out?", "¿Se aceptan mascotas?",
+                         "¿Qué medios de pago aceptan?" y "¿El estacionamiento tiene costo?" cuando haya respuesta confirmada. -->
                 </div>
             </div>
         </section>
@@ -551,9 +887,9 @@
                         tus fechas, número de huéspedes y requerimientos para responderte a la brevedad.
                     </p>
 
-                    <a class="button button--primary" href="tel:+56956491501" target="_blank" rel="noopener noreferrer">Llamar</a>
+                    <a class="button button--primary" href="tel:+56956491501">Llamar</a>
                     <a class="button button--primary" href="https://wa.me/56956491501" target="_blank" rel="noopener noreferrer">Hablar por WhatsApp</a>
-                    <a class="button button--ghost" href="https://www.instagram.com/hotelherencia?igsh=aDZxNTdybHFpeDhh" target="_blank" rel="noopener noreferrer">Instagram</a>
+                    <a class="button button--ghost" href="https://www.instagram.com/hotelherencia/" target="_blank" rel="noopener noreferrer">Instagram</a>
                 </div>
 
                 <div class="contact__form-wrap" data-reveal>
@@ -615,6 +951,28 @@
             </div>
         </section>
     </main>
+
+    <footer class="site-footer">
+        <div class="container site-footer__inner">
+            <div class="site-footer__nap">
+                <p class="site-footer__name">Hotel Herencia</p>
+                <p>Operado por Herencia SpA · RUT 76.707.504-9</p>
+                <p>Calle Diego de Almagro 751, Chillán, Región de Ñuble, Chile</p>
+                <p><a href="tel:+56956491501">+56 9 5649 1501</a> · <a href="https://wa.me/56956491501" target="_blank" rel="noopener noreferrer">WhatsApp</a></p>
+            </div>
+            <nav class="site-footer__links" aria-label="Enlaces del sitio">
+                <a href="#datos-clave">Datos clave</a>
+                <a href="#habitaciones">Habitaciones</a>
+                <a href="#servicios">Servicios</a>
+                <a href="#ubicacion">Ubicación</a>
+                <a href="#preguntas-frecuentes">Preguntas frecuentes</a>
+                <a href="#contacto">Contacto</a>
+                <a href="https://maps.app.goo.gl/XYgS4ZHtKSHauBpj8" target="_blank" rel="noopener noreferrer">Google Maps</a>
+                <a href="https://www.instagram.com/hotelherencia/" target="_blank" rel="noopener noreferrer">Instagram</a>
+                <a href="/privacidad.html">Política de tratamiento de datos</a>
+            </nav>
+        </div>
+    </footer>
 
     <a class="sticky-cta" href="#contacto" data-cta-reserva>Consultar reserva</a>
 

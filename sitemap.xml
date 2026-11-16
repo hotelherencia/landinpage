@@ -1,9 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
-    <loc>https://hotelherencia.cl/</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>1.0</priority>
+    <loc>https://www.hotelherencia.cl/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <image:image><image:loc>https://www.hotelherencia.cl/assets/img/hotel-herencia.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.hotelherencia.cl/assets/img/124823346.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.hotelherencia.cl/assets/img/124823348.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.hotelherencia.cl/assets/img/124822057.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.hotelherencia.cl/assets/img/124822020.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.hotelherencia.cl/assets/img/124824164.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.hotelherencia.cl/assets/img/124825874.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.hotelherencia.cl/assets/img/124825882.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.hotelherencia.cl/assets/img/cocina.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.hotelherencia.cl/assets/img/124824018.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.hotelherencia.cl/privacidad.html</loc>
+    <lastmod>2026-11-16</lastmod>
   </url>
 </urlset>
