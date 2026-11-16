@@ -801,6 +801,23 @@ figure.map-card {
     font-weight: 800;
     transform: translateX(-50%);
     box-shadow: 0 18px 34px rgba(18, 41, 31, 0.3);
+    transition: opacity 200ms ease, transform 200ms ease;
+}
+
+/* UX: el botón fijo se oculta mientras se ven los CTA del hero o el formulario, para no taparlos. */
+.sticky-cta.is-oculto {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 160%);
+}
+
+.form-note {
+    margin: 0.6rem 0 0;
+    font-size: 0.95rem;
+}
+
+.form-status button {
+    margin: 0.5rem 0.6rem 0 0;
 }
 
 .js [data-reveal] {
@@ -892,6 +909,12 @@ figure.map-card {
 
     .sticky-cta {
         display: inline-flex;
+        bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* El sello de reCAPTCHA queda sobre el botón fijo, no debajo. */
+    .grecaptcha-badge {
+        bottom: 5.5rem !important;
     }
 
     .section--contact {

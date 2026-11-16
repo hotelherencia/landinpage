@@ -103,7 +103,7 @@ test('el enlace a /reservar no lleva datos personales y solo acepta referencias 
     const cuerpo = valido();
     const conRef = new URL(ctx.enlaceContinuarReserva(cuerpo, 'A'.repeat(24)));
     assert.equal(conRef.origin + conRef.pathname, 'https://plataforma.hotelherencia.cl/reservar');
-    assert.deepEqual([...conRef.searchParams.keys()].sort(), ['fin', 'inicio', 'personas', 'ref']);
+    assert.deepEqual([...conRef.searchParams.keys()].sort(), ['llegada', 'personas', 'ref', 'salida']);
     const texto = conRef.toString();
     for (const dato of ['Ana', 'ana@example.com', '1234']) {
         assert.ok(!texto.includes(encodeURIComponent(dato)) && !texto.includes(dato), `no debe incluir ${dato}`);

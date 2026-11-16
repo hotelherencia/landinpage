@@ -208,22 +208,146 @@ function setStatusConContinuar(message, enlace) {
     statusElement.classList.add('is-success');
 }
 
-function enlaceContinuarReserva(cuerpo, referencia) {
-    if (!cuerpo.check_in || !cuerpo.check_out) {
+/*
+ * Continuidad landing → plataforma sin datos personales en la URL.
+ * Tras una consulta exitosa la plataforma entrega una referencia opaca (SOC-016, caduca a las 72 h).
+ * La guardamos en este navegador con la misma caducidad y la agregamos a TODO enlace hacia
+ * /reservar (CTA del hero, botón flotante, «Ver disponibilidad», redirección /reservar), para que
+ * la plataforma precargue nombre y correo en vez de volver a pedirlos.
+ */
+const CLAVE_REFERENCIA = 'herencia:consulta-ref';
+const HORAS_REFERENCIA = 72;
+const PATRON_REFERENCIA = /^[A-Za-z0-9_-]{20,128}$/;
+const PATRON_FECHA = /^\d{4}-\d{2}-\d{2}$/;
+const MAX_PERSONAS = 30;
+const MAX_NOCHES = 30;
+
+function referenciaValida(valor) {
+    return typeof valor === 'string' && PATRON_REFERENCIA.test(valor);
+}
+
+function almacen() {
+    try {
+        return window.localStorage || null;
+    } catch {
+        return null;
+    }
+}
+
+function guardarReferencia(referencia, ahora = Date.now()) {
+    const store = almacen();
+
+    if (!store || !referenciaValida(referencia)) {
+        return false;
+    }
+
+    try {
+        store.setItem(CLAVE_REFERENCIA, JSON.stringify({ ref: referencia, expira: ahora + HORAS_REFERENCIA * 3600000 }));
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function olvidarReferencia() {
+    try {
+        almacen()?.removeItem(CLAVE_REFERENCIA);
+    } catch {
+        // Sin almacenamiento disponible: nada que borrar.
+    }
+}
+
+function referenciaGuardada(ahora = Date.now()) {
+    const store = almacen();
+
+    if (!store) {
         return '';
     }
 
-    const params = new URLSearchParams({
-        inicio: cuerpo.check_in,
-        fin: cuerpo.check_out,
-        personas: String(cuerpo.huespedes || 1)
-    });
+    try {
+        const datos = JSON.parse(store.getItem(CLAVE_REFERENCIA) || 'null');
 
-    if (/^[A-Za-z0-9_-]{20,128}$/.test(referencia || '')) {
-        params.set('ref', referencia);
+        if (datos && referenciaValida(datos.ref) && Number.isFinite(datos.expira) && datos.expira > ahora) {
+            return datos.ref;
+        }
+    } catch {
+        // Valor corrupto o manipulado: se descarta.
+    }
+
+    olvidarReferencia();
+    return '';
+}
+
+/** Fecha ISO real (no solo con forma AAAA-MM-DD: 2026-02-31 se rechaza). */
+function fechaIsoValida(valor) {
+    if (typeof valor !== 'string' || !PATRON_FECHA.test(valor)) {
+        return false;
+    }
+
+    const d = new Date(`${valor}T00:00:00`);
+    return !Number.isNaN(d.getTime()) && formatDate(d) === valor;
+}
+
+function personasValidas(valor) {
+    const n = Number(valor);
+    return /^\d{1,2}$/.test(String(valor)) && Number.isInteger(n) && n >= 1 && n <= MAX_PERSONAS;
+}
+
+/** Solo entra a la URL lo que pasa la lista blanca: fechas reales, rango sano, personas 1..30, ref opaca. */
+function enlaceContinuarReserva(cuerpo, referencia) {
+    const params = new URLSearchParams();
+    const inicio = cuerpo?.check_in;
+    const fin = cuerpo?.check_out;
+
+    if (fechaIsoValida(inicio) && fechaIsoValida(fin) && !mensajeRango(inicio, fin, 1)) {
+        // Parámetros canónicos compartidos con la plataforma: llegada / salida / personas.
+        params.set('llegada', inicio);
+        params.set('salida', fin);
+        params.set('personas', String(personasValidas(cuerpo.huespedes) ? Number(cuerpo.huespedes) : 1));
+    }
+
+    const ref = referenciaValida(referencia) ? referencia : referenciaGuardada();
+
+    if (ref) {
+        params.set('ref', ref);
+    }
+
+    if (!params.has('llegada') && !params.has('ref')) {
+        return '';
     }
 
     return `${urlPlataforma()}/reservar?${params.toString()}`;
+}
+
+/**
+ * Agrega la referencia guardada a un enlace hacia /reservar (absoluto de la plataforma o relativo
+ * /reservar de esta landing). Cualquier otro destino se devuelve igual: no hay redirecciones abiertas.
+ */
+function conReferencia(href) {
+    const ref = referenciaGuardada();
+
+    if (!ref || typeof href !== 'string') {
+        return href;
+    }
+
+    let url;
+
+    try {
+        url = new URL(href, `${urlPlataforma()}/`);
+    } catch {
+        return href;
+    }
+
+    const plataforma = new URL(urlPlataforma());
+    const esReservar = url.pathname === '/reservar'
+        && (url.origin === plataforma.origin || href.startsWith('/reservar'));
+
+    if (!esReservar || url.searchParams.has('ref')) {
+        return href;
+    }
+
+    url.searchParams.set('ref', ref);
+    return href.startsWith('/reservar') ? `${url.pathname}?${url.searchParams.toString()}` : url.toString();
 }
 
 function validateStayDates() {
@@ -313,6 +437,28 @@ function tokenRecaptcha(accion) {
     return pedir().catch(() => pedir());
 }
 
+/**
+ * El proxy /api/publico/leads verifica un token y la plataforma verifica otro: Google acepta cada
+ * token una sola vez (timeout-or-duplicate), así que reenviar el mismo hacía que la plataforma
+ * rechazara con 403 toda consulta de la landing y la referencia nunca llegaba a /reservar.
+ */
+async function tokensRecaptchaConsulta() {
+    const primero = await tokenRecaptcha('consulta');
+    const segundo = primero ? await tokenRecaptcha('consulta') : '';
+    return [primero, segundo];
+}
+
+/** Tras una consulta exitosa: se borran nombre, correo, teléfono y mensaje; fechas y personas quedan. */
+function limpiarDatosPersonales() {
+    for (const nombre of ['name', 'email', 'phone', 'message']) {
+        const campo = form?.elements?.namedItem?.(nombre);
+
+        if (campo && 'value' in campo) {
+            campo.value = '';
+        }
+    }
+}
+
 function mensajeFalloCaptcha() {
     return 'No se pudo verificar el envío. Actualiza la página o escríbenos por teléfono o WhatsApp.';
 }
@@ -392,12 +538,17 @@ document.addEventListener('click', (evento) => {
     }
 
     const href = enlace.getAttribute('href') || '';
+    const decorado = conReferencia(href);
+
+    if (decorado !== href && typeof enlace.setAttribute === 'function') {
+        enlace.setAttribute('href', decorado);
+    }
 
     if (href.startsWith('https://wa.me/')) {
         registrarEvento('contact_whatsapp', { ubicacion: seccionDe(enlace) });
     } else if (href.startsWith('tel:')) {
         registrarEvento('contact_phone', { ubicacion: seccionDe(enlace) });
-    } else if (href.startsWith(`${urlPlataforma()}/reservar`)) {
+    } else if (href.startsWith(`${urlPlataforma()}/reservar`) || href.startsWith('/reservar')) {
         // Enlace "Continuar con la reserva" que aparece tras enviar la consulta.
         registrarEvento('check_availability', { destino: 'plataforma_reservar' });
     }
@@ -424,6 +575,10 @@ function mensajeRango(inicio, fin, personas) {
         return 'Indica las fechas de tu estadía.';
     }
 
+    if (!fechaIsoValida(inicio) || !fechaIsoValida(fin)) {
+        return 'Indica fechas válidas.';
+    }
+
     if (fin <= inicio) {
         return 'La salida debe ser posterior a la llegada.';
     }
@@ -434,17 +589,46 @@ function mensajeRango(inicio, fin, personas) {
 
     const noches = (new Date(`${fin}T00:00:00`) - new Date(`${inicio}T00:00:00`)) / 86400000;
 
-    if (noches > 30) {
+    if (noches > MAX_NOCHES) {
         return 'El rango supera las 30 noches.';
     }
 
     const n = Number(personas);
 
-    if (!Number.isInteger(n) || n < 1 || n > 30) {
+    if (!Number.isInteger(n) || n < 1 || n > MAX_PERSONAS) {
         return 'Personas debe estar entre 1 y 30.';
     }
 
     return '';
+}
+
+/** Mensaje de error con un enlace opcional para seguir igual (nunca se navega sin avisar). */
+function mostrarDisponibilidadConEnlace(mensaje, enlace, textoEnlace, accion) {
+    if (!disponibilidadEstado) {
+        return;
+    }
+
+    disponibilidadEstado.replaceChildren(document.createTextNode(mensaje));
+
+    if (accion) {
+        disponibilidadEstado.append(document.createElement('br'));
+        const boton = document.createElement('button');
+        boton.type = 'button';
+        boton.className = 'button button--primary';
+        boton.textContent = accion.texto;
+        boton.addEventListener('click', accion.alPulsar, { once: true });
+        disponibilidadEstado.append(boton);
+    }
+
+    if (enlace) {
+        disponibilidadEstado.append(document.createTextNode(' '));
+        const a = document.createElement('a');
+        a.href = enlace;
+        a.textContent = textoEnlace;
+        disponibilidadEstado.append(a);
+    }
+
+    disponibilidadEstado.hidden = false;
 }
 
 function mostrarDisponibilidad(mensaje) {
@@ -456,7 +640,7 @@ function mostrarDisponibilidad(mensaje) {
     disponibilidadEstado.hidden = !mensaje;
 }
 
-async function irAReservarConFechas({ conLead }) {
+async function irAReservarConFechas({ conLead, confirmado = false }) {
     if (!form) {
         return;
     }
@@ -477,15 +661,42 @@ async function irAReservarConFechas({ conLead }) {
         huespedes: null,
         mensaje: null
     });
+    // Incluye la referencia guardada si el visitante ya envió una consulta en este navegador.
     const enlaceSoloFechas = enlaceContinuarReserva(cuerpo, '');
+    const contactoVacio = !cuerpo.nombre && !cuerpo.correo && !cuerpo.telefono;
+    const yaConsulto = Boolean(referenciaGuardada());
 
-    if (problemaContacto || !conLead) {
+    if (contactoVacio || !conLead) {
         mostrarDisponibilidad(
-            problemaContacto
-                ? 'Vas a la reserva sin consulta previa: allí escribirás nombre y contacto. Para llevarlos, completa el formulario y pulsa Enviar consulta, o rellena nombre, correo y teléfono antes de Ver disponibilidad.'
+            yaConsulto
+                ? 'Seguimos con tu consulta: en la reserva verás tus datos ya cargados.'
                 : 'Vas a la reserva solo con las fechas; el contacto se pide allá.'
         );
         irAReserva(enlaceSoloFechas);
+        return;
+    }
+
+    if (problemaContacto) {
+        // Datos a medio llenar: avisar y dejar corregir antes de salir, para no perderlos.
+        mostrarDisponibilidadConEnlace(
+            `${problemaContacto} Así llevamos tus datos a la reserva y no tendrás que escribirlos otra vez.`,
+            enlaceSoloFechas,
+            'Seguir sin mis datos'
+        );
+        return;
+    }
+
+    if (!confirmado) {
+        // UX-06: nunca se envía una consulta sin que el visitante lo pida. Se le ofrece explícitamente.
+        mostrarDisponibilidadConEnlace(
+            'Para llevar tu nombre y contacto a la reserva, primero enviamos tu consulta a recepción (no confirma la estadía).',
+            enlaceSoloFechas,
+            'Seguir sin enviar mis datos',
+            {
+                texto: 'Enviar consulta y continuar',
+                alPulsar: () => irAReservarConFechas({ conLead: true, confirmado: true })
+            }
+        );
         return;
     }
 
@@ -507,27 +718,34 @@ async function irAReservarConFechas({ conLead }) {
             'Idempotency-Key': crypto.randomUUID()
         };
         let token = '';
+        let tokenServicio = '';
 
         try {
-            token = await tokenRecaptcha('consulta');
+            [token, tokenServicio] = await tokensRecaptchaConsulta();
         } catch {
-            mostrarDisponibilidad(
-                'No se pudo verificar el envío. Abriremos la reserva; completa nombre y contacto allí.'
+            mostrarDisponibilidadConEnlace(
+                'No se pudo verificar el envío. Inténtalo de nuevo en unos segundos.',
+                enlaceSoloFechas,
+                'Seguir sin mis datos'
             );
-            irAReserva(enlaceSoloFechas);
             return;
         }
 
         if (RECAPTCHA_SITE_KEY && !token) {
-            mostrarDisponibilidad(
-                'No se pudo verificar el envío. Abriremos la reserva; completa nombre y contacto allí.'
+            mostrarDisponibilidadConEnlace(
+                'No se pudo verificar el envío. Inténtalo de nuevo en unos segundos.',
+                enlaceSoloFechas,
+                'Seguir sin mis datos'
             );
-            irAReserva(enlaceSoloFechas);
             return;
         }
 
         if (token) {
             cabeceras['X-Recaptcha-Token'] = token;
+        }
+
+        if (tokenServicio) {
+            cabeceras['X-Recaptcha-Token-Servicio'] = tokenServicio;
         }
 
         const respuesta = await fetch(`${api}/publico/leads`, {
@@ -537,18 +755,20 @@ async function irAReservarConFechas({ conLead }) {
         });
 
         if (respuesta.status === 403) {
-            mostrarDisponibilidad(
-                'No se pudo verificar el envío. Abriremos la reserva; completa nombre y contacto allí.'
+            mostrarDisponibilidadConEnlace(
+                'No se pudo verificar el envío. Inténtalo de nuevo en unos segundos.',
+                enlaceSoloFechas,
+                'Seguir sin mis datos'
             );
-            irAReserva(enlaceSoloFechas);
             return;
         }
 
         if (respuesta.status !== 201 && respuesta.status !== 200) {
-            mostrarDisponibilidad(
-                'No se pudo guardar la consulta. Abriremos la reserva; completa nombre y contacto allí.'
+            mostrarDisponibilidadConEnlace(
+                mensajeEnvio(respuesta.status),
+                enlaceSoloFechas,
+                'Seguir sin mis datos'
             );
-            irAReserva(enlaceSoloFechas);
             return;
         }
 
@@ -561,13 +781,15 @@ async function irAReservarConFechas({ conLead }) {
             referencia = '';
         }
 
+        guardarReferencia(referencia);
         registrarEvento('generate_lead', { event_id: cabeceras['Idempotency-Key'], origen: 'ver_disponibilidad' });
         irAReserva(enlaceContinuarReserva(cuerpo, referencia));
     } catch (error) {
-        mostrarDisponibilidad(
-            'No se pudo guardar la consulta. Abriremos la reserva; completa nombre y contacto allí.'
+        mostrarDisponibilidadConEnlace(
+            'No se pudo guardar la consulta. Inténtalo de nuevo o escríbenos por WhatsApp.',
+            enlaceSoloFechas,
+            'Seguir sin mis datos'
         );
-        irAReserva(enlaceSoloFechas);
     } finally {
         disponibilidadBoton.disabled = false;
     }
@@ -589,6 +811,14 @@ document.querySelectorAll('[data-cta-reserva]').forEach((enlace) => {
         const problemaFechas = mensajeRango(inicio || null, fin || null, Number(personas) || 1);
 
         if (problemaFechas) {
+            // Sin fechas, pero con una consulta ya enviada: la plataforma pide las fechas y precarga el contacto.
+            const soloRef = referenciaGuardada() ? enlaceContinuarReserva({}, '') : '';
+
+            if (soloRef) {
+                evento.preventDefault();
+                irAReserva(soloRef);
+            }
+
             return;
         }
 
@@ -701,9 +931,10 @@ form?.addEventListener('submit', async (event) => {
             'Idempotency-Key': crypto.randomUUID()
         };
         let token = '';
+        let tokenServicio = '';
 
         try {
-            token = await tokenRecaptcha('consulta');
+            [token, tokenServicio] = await tokensRecaptchaConsulta();
         } catch {
             setStatus(mensajeFalloCaptcha(), 'error');
             return;
@@ -716,6 +947,10 @@ form?.addEventListener('submit', async (event) => {
 
         if (token) {
             cabeceras['X-Recaptcha-Token'] = token;
+        }
+
+        if (tokenServicio) {
+            cabeceras['X-Recaptcha-Token-Servicio'] = tokenServicio;
         }
 
         const respuesta = await fetch(`${api}/publico/leads`, {
@@ -734,10 +969,10 @@ form?.addEventListener('submit', async (event) => {
                 referencia = '';
             }
 
+            guardarReferencia(referencia);
             const continuar = enlaceContinuarReserva(cuerpo, referencia);
             registrarEvento('generate_lead', { event_id: cabeceras['Idempotency-Key'], origen: 'formulario' });
-            form.reset();
-            syncDateConstraints();
+            limpiarDatosPersonales();
             setStatusConContinuar(mensajeEnvio(respuesta.status), continuar);
             return;
         }
@@ -754,3 +989,73 @@ form?.addEventListener('submit', async (event) => {
         submitButton.disabled = false;
     }
 });
+
+/** Al volver a la landing con una consulta vigente: se ofrece seguir sin escribir los datos otra vez. */
+function avisarConsultaVigente() {
+    if (!statusElement || !referenciaGuardada()) {
+        return;
+    }
+
+    const datos = form ? cuerpoConsulta(Object.fromEntries(new FormData(form).entries())) : {};
+    const enlace = enlaceContinuarReserva(datos, '');
+
+    if (enlace) {
+        setStatusConContinuar('Ya recibimos tu consulta: puedes seguir con la reserva sin volver a escribir tus datos.', enlace);
+    }
+}
+
+try {
+    avisarConsultaVigente();
+} catch {
+    // El aviso es opcional: nunca debe impedir usar el formulario.
+}
+
+/* UX: botón fijo «Consultar reserva» oculto mientras el hero o el formulario están a la vista. */
+(function ocultarBotonFijoSobreCtas() {
+    const fijo = document.querySelector('.sticky-cta');
+    const vigilados = [document.querySelector('.hero__actions'), document.querySelector('#contacto')].filter(Boolean);
+
+    if (!fijo || vigilados.length === 0 || typeof IntersectionObserver !== 'function') {
+        return;
+    }
+
+    const visibles = new Set();
+    const observador = new IntersectionObserver((entradas) => {
+        entradas.forEach((e) => (e.isIntersecting ? visibles.add(e.target) : visibles.delete(e.target)));
+        fijo.classList.toggle('is-oculto', visibles.size > 0);
+    }, { threshold: 0 });
+    vigilados.forEach((v) => observador.observe(v));
+}());
+
+/* 4 o más personas: se explica el tope de 3 por habitación y se ofrece WhatsApp con fechas y personas (sin datos personales). */
+function mensajeWhatsappGrupo(inicio, fin, personas) {
+    const partes = ['Hola, quiero consultar disponibilidad en Hotel Herencia'];
+    if (personasValidas(personas)) {
+        partes.push(`para ${Number(personas)} personas`);
+    }
+    if (fechaIsoValida(inicio) && fechaIsoValida(fin) && fin > inicio) {
+        partes.push(`del ${inicio} al ${fin}`);
+    }
+    return `https://wa.me/56956491501?text=${encodeURIComponent(`${partes.join(' ')}.`)}`;
+}
+
+function actualizarAvisoGrupo() {
+    const aviso = document.querySelector('[data-aviso-grupo]');
+    if (!aviso || !guestsInput) {
+        return;
+    }
+    const personas = Number(guestsInput.value);
+    aviso.hidden = !(Number.isInteger(personas) && personas >= 4);
+    const enlace = aviso.querySelector('[data-whatsapp-grupo]');
+    if (enlace && typeof enlace.setAttribute === 'function') {
+        enlace.setAttribute('href', mensajeWhatsappGrupo(checkinInput?.value, checkoutInput?.value, guestsInput.value));
+    }
+}
+
+[guestsInput, checkinInput, checkoutInput].forEach((campo) => campo?.addEventListener('change', actualizarAvisoGrupo));
+guestsInput?.addEventListener('input', actualizarAvisoGrupo);
+try {
+    actualizarAvisoGrupo();
+} catch {
+    // Aviso opcional.
+}
