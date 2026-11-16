@@ -67,10 +67,10 @@ test('Hotel: NAP coherente con el texto visible, geo numérico y sin datos inven
     assert.equal(typeof hotel.geo.longitude, 'number');
     assert.ok(hotel.geo.latitude < -36.5 && hotel.geo.latitude > -36.7, 'latitud en Chillán');
     assert.ok(hotel.geo.longitude < -72.0 && hotel.geo.longitude > -72.2, 'longitud en Chillán');
-    for (const prohibido of ['aggregateRating', 'review', 'starRating', 'priceRange', 'makesOffer']) {
-        assert.ok(!(prohibido in hotel), `${prohibido} requiere dato confirmado por el negocio`);
+    for (const prohibido of ['aggregateRating', 'review', 'starRating', 'makesOffer']) {
+        assert.ok(!(prohibido in hotel), `${prohibido} no debe publicarse en el schema (dato no confirmado o reseña autoservida)`);
     }
-    for (const archivo of ['llms.txt', '404.html']) {
+    for (const archivo of ['llms.txt', 'llms-full.txt', '404.html']) {
         assert.ok(leer(archivo).includes('Diego de Almagro 751'), `${archivo} usa la misma dirección`);
     }
 });
@@ -152,6 +152,17 @@ test('sitemap: solo URLs canónicas de páginas existentes, y robots.txt lo decl
             assert.doesNotMatch(grupo, /^Disallow: \/$/m, `${bot} no debe bloquearse por completo`);
         }
     }
+    const seccionIA = robots.split('# Buscadores con IA')[1] || '';
+    assert.ok(seccionIA, 'robots.txt debe declarar el grupo de buscadores con IA');
+    assert.match(seccionIA, /^Allow: \/$/m, 'los buscadores con IA deben poder rastrear el sitio');
+    assert.doesNotMatch(seccionIA, /^Disallow: \/$/m, 'los buscadores con IA no deben bloquearse por completo');
+    for (const bot of ['OAI-SearchBot', 'PerplexityBot', 'Claude-SearchBot', 'ChatGPT-User']) {
+        assert.match(seccionIA, new RegExp(`^User-agent: ${bot}$`, 'm'), `${bot} debe estar permitido`);
+    }
+    // Google-Extended permanece en el grupo de entrenamiento (política actual: no alimenta Gemini/Vertex).
+    const seccionEntrenamiento = robots.split('# Rastreadores de entrenamiento')[1]?.split('# Buscadores con IA')[0] || '';
+    assert.match(seccionEntrenamiento, /^User-agent: Google-Extended$/m);
+    assert.match(seccionEntrenamiento, /^Disallow: \/$/m);
 });
 
 test('despliegue: docs y tests no se publican; /reservar redirige temporalmente a la plataforma', () => {
@@ -186,3 +197,101 @@ test('seguridad: /reservar apunta a un host fijo (sin redirección abierta), HST
     assert.equal(cabeceras['Referrer-Policy'], 'strict-origin-when-cross-origin');
     assert.match(cabeceras['Strict-Transport-Security'], /max-age=\d{7,}/);
 });
+
+test('Hotel JSON-LD tiene los campos confirmados, tipos de schema.org y ninguna reseña autoservida', () => {
+    const tiposConocidos = new Set([
+        'Organization', 'ImageObject', 'WebSite', 'WebPage', 'Hotel', 'PostalAddress',
+        'GeoCoordinates', 'LocationFeatureSpecification', 'HotelRoom', 'BedDetails',
+        'City', 'AdministrativeArea', 'Country', 'ContactPoint', 'OpeningHoursSpecification',
+        'ReserveAction', 'EntryPoint', 'FAQPage', 'Question', 'Answer', 'BreadcrumbList', 'ListItem',
+    ]);
+    const recogerTipos = (nodo, acc = []) => {
+        if (Array.isArray(nodo)) {
+            nodo.forEach((x) => recogerTipos(x, acc));
+        } else if (nodo && typeof nodo === 'object') {
+            if (typeof nodo['@type'] === 'string') acc.push(nodo['@type']);
+            if (Array.isArray(nodo['@type'])) acc.push(...nodo['@type']);
+            Object.values(nodo).forEach((v) => recogerTipos(v, acc));
+        }
+        return acc;
+    };
+    for (const p of paginas) {
+        for (const bloque of jsonLd(html[p])) {
+            for (const tipo of recogerTipos(bloque)) {
+                assert.ok(tiposConocidos.has(tipo), `${p}: tipo schema.org no contemplado: ${tipo}`);
+            }
+        }
+    }
+
+    const hotel = nodo('Hotel');
+    assert.equal(hotel.name, 'Hotel Herencia');
+    assert.equal(hotel.url, BASE);
+    assert.ok(hotel.logo && hotel.logo['@id']);
+    assert.ok(Array.isArray(hotel.image) && hotel.image.length >= 1);
+    hotel.image.forEach((url) => {
+        assert.match(url, /^https:\/\/www\.hotelherencia\.cl\/assets\/img\//);
+        assert.ok(existsSync(new URL(url.replace(BASE, ''), raiz)), `imagen del schema no existe: ${url}`);
+    });
+    assert.equal(hotel.telephone, '+56956491501');
+    assert.equal(hotel.address['@type'], 'PostalAddress');
+    assert.equal(hotel.address.streetAddress, 'Calle Diego de Almagro 751');
+    assert.equal(hotel.address.addressLocality, 'Chillán');
+    assert.equal(hotel.address.addressRegion, 'Ñuble');
+    assert.equal(hotel.address.addressCountry, 'CL');
+    assert.ok(!('postalCode' in hotel.address), 'no inventar código postal');
+    assert.equal(hotel.geo.latitude, -36.5983065);
+    assert.equal(hotel.geo.longitude, -72.09031);
+    assert.equal(hotel.checkinTime, '14:00');
+    assert.equal(hotel.checkoutTime, '12:00');
+    assert.equal(hotel.numberOfRooms, 17);
+    assert.equal(hotel.priceRange, 'CLP 47.000 – 65.000');
+    assert.equal(hotel.currenciesAccepted, 'CLP');
+    assert.equal(hotel.paymentAccepted, 'Efectivo, Tarjeta, Transferencia');
+    const amenidades = hotel.amenityFeature.map((a) => a.name);
+    assert.deepEqual(amenidades, [
+        'WiFi', 'Estacionamiento', 'Desayuno buffet', 'Aire acondicionado',
+        'TV cable', 'Baño privado', 'Recepción 24 horas',
+    ]);
+    const textoAmenidades = amenidades.join(' ').toLowerCase();
+    for (const prohibido of ['terraza', 'servicio de habitaciones', 'servicio a la habitación', 'cocina', 'familiares']) {
+        assert.ok(!textoAmenidades.includes(prohibido), `amenityFeature no debe incluir «${prohibido}»`);
+    }
+    assert.ok(!('email' in hotel));
+    assert.ok(!('petsAllowed' in hotel));
+    const sameAs = hotel.sameAs;
+    assert.ok(sameAs.includes('https://www.instagram.com/hotelherencia/'));
+    assert.ok(sameAs.includes('https://maps.app.goo.gl/XYgS4ZHtKSHauBpj8'));
+    const reserva = hotel.potentialAction;
+    assert.equal(reserva['@type'], 'ReserveAction');
+    assert.equal(reserva.target.urlTemplate, 'https://plataforma.hotelherencia.cl/reservar');
+    const serializado = JSON.stringify(hotel);
+    assert.doesNotMatch(serializado, /aggregateRating/);
+    assert.doesNotMatch(serializado, /8,3/);
+});
+
+test('el texto público no afirma servicios contradichos ni pone valoraciones en el schema', () => {
+    const cuerpo = html['index.html'].split('<body>')[1];
+    const visible = normalizar(cuerpo);
+    for (const prohibido of [
+        'terraza en habitaciones',
+        'servicio de habitaciones',
+        'servicio a la habitación',
+        'cocina equipada',
+        'habitaciones familiares',
+    ]) {
+        assert.ok(!visible.toLowerCase().includes(prohibido), `el texto visible no debe afirmar «${prohibido}»`);
+        for (const archivo of ['llms.txt', 'llms-full.txt']) {
+            const txt = leer(archivo).toLowerCase();
+            // llms-full menciona las expresiones para decir que no se afirman; solo prohibir afirmaciones positivas.
+            if (archivo === 'llms-full.txt' && /no se (afirma|publican)/i.test(leer(archivo))) {
+                continue;
+            }
+            assert.ok(!txt.includes(prohibido) || txt.includes(`no se afirma`) || txt.includes('no se publican'), `${archivo} no debe afirmar «${prohibido}»`);
+        }
+    }
+    assert.match(visible, /check-in es a partir de las 14:00/);
+    assert.match(visible, /check-out hasta las 12:00/);
+    assert.match(leer('llms.txt'), /plataforma\.hotelherencia\.cl\/reservar/);
+    assert.match(leer('robots.txt'), /Google-Extended/);
+});
+

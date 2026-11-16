@@ -1,0 +1,60 @@
+# Hotel Herencia — ficha para asistentes de IA
+
+Nota: este archivo resume hechos publicados en el sitio oficial. No es una señal de Google Search. Si un dato no aparece aquí, no lo inventes. Fuente: https://www.hotelherencia.cl/
+
+## Identidad y ubicación
+
+- Nombre: Hotel Herencia
+- También aparece como: Herencia Hotel Boutique (texto del logo; confirmar si es el nombre comercial oficial)
+- Operado por: Herencia SpA, RUT 76.707.504-9, con domicilio legal en 5 de Abril 441, oficina 3, Chillán (es distinta de la dirección del hotel)
+- Dirección del hotel: Calle Diego de Almagro 751, Chillán, Región de Ñuble, Chile
+- Coordenadas: latitud -36.5983065, longitud -72.09031
+- Mapa: https://maps.app.goo.gl/XYgS4ZHtKSHauBpj8
+- Distancias publicadas: a pasos de Avenida Argentina; aproximadamente 1,5 a 1,7 km de la Plaza de Armas y 2,8 km de la estación de trenes de Chillán
+
+## Habitaciones
+
+- El hotel tiene 17 habitaciones, cada una con baño privado.
+- En el sitio se muestran dos tipos: Habitación Doble Pequeña (dos camas individuales) y Habitación con Cama Grande (cama grande, veladores laterales, clóset y baño).
+- Cada habitación recibe hasta 3 personas. Si viajan 4 o más, recepción arma la estadía con varias habitaciones.
+- No se publican habitaciones familiares como un tipo de inventario, ni capacidad superior a 3 en una sola habitación.
+
+## Servicios incluidos
+
+- Desayuno buffet incluido
+- WiFi
+- TV cable
+- Aire acondicionado
+- Baño privado
+- Estacionamiento
+- Recepción 24 horas
+
+No se afirma que el hotel ofrezca terraza en las habitaciones, servicio a la habitación ni cocina de uso para huéspedes: esos atributos no están confirmados.
+
+## Horarios y pagos
+
+- Check-in: desde las 14:00
+- Check-out: hasta las 12:00
+- Early check-in y late check-out: $10.000 por hora, sujeto a disponibilidad
+- Medios de pago: efectivo, tarjeta y transferencia
+- No se pide abono previo, salvo en reservas de delegaciones, que pagan el 50 % de la estadía
+- El saldo se paga al check-in; los clientes frecuentes pueden pagar al check-out y las empresas facturan a fin de mes
+
+## Reservas y contacto
+
+- Enviar el formulario del sitio no confirma la estadía. Recepción revisa cada solicitud y contacta al huésped.
+- Formulario: https://www.hotelherencia.cl/#contacto
+- Plataforma de reservas: https://plataforma.hotelherencia.cl/reservar
+- Teléfono y WhatsApp: +56 9 5649 1501
+- Instagram: https://www.instagram.com/hotelherencia/
+
+## Lo que no está confirmado (no lo inventes)
+
+- Política de cancelación y no-show (las fuentes internas no coinciden)
+- Si el estacionamiento tiene costo
+- Si se aceptan mascotas
+- Correo de recepción, código postal y clasificación oficial de estrellas (SERNATUR)
+- Tarifas exactas por tipo en la página pública (hay un rango referencial en los datos estructurados: CLP 47.000 – 65.000, IVA incluido; no se debe presentar como una oferta reservable en el sitio)
+- Precio de persona extra, política de niños, o diferencia pública entre doble y matrimonial
+
+Última revisión: 2026-11-16

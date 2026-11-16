@@ -1,6 +1,6 @@
 # Hotel Herencia
 
-> Hotel boutique en Chillán, Región de Ñuble, Chile. Calle Diego de Almagro 751, a pasos de Avenida Argentina. Desayuno, estacionamiento, WiFi y aire acondicionado. Consultas y reservas directas con recepción: +56 9 5649 1501 (teléfono y WhatsApp).
+> Hotel boutique en Chillán, Región de Ñuble, Chile. Calle Diego de Almagro 751, a pasos de Avenida Argentina. Desayuno buffet incluido, estacionamiento, WiFi, aire acondicionado, TV cable y recepción 24 horas. Check-in desde las 14:00 y check-out hasta las 12:00. Consultas y reservas: +56 9 5649 1501 (teléfono y WhatsApp) o https://plataforma.hotelherencia.cl/reservar
 
 Nota: este archivo es un resumen para asistentes de IA. No es una señal de Google Search; la fuente oficial es la página principal.
 
@@ -9,11 +9,13 @@ Nota: este archivo es un resumen para asistentes de IA. No es una señal de Goog
 - Nombre: Hotel Herencia (Herencia Hotel Boutique)
 - Operado por: Herencia SpA, RUT 76.707.504-9
 - Dirección: Calle Diego de Almagro 751, Chillán, Región de Ñuble, Chile
+- Coordenadas: -36.5983065, -72.09031
 - Distancias: aprox. 1,5 a 1,7 km de la Plaza de Armas y 2,8 km de la estación de trenes de Chillán
-- Servicios: desayuno, WiFi, estacionamiento, aire acondicionado, terraza en habitaciones, servicio de habitaciones, habitaciones familiares
-- Habitaciones: Habitación Doble Pequeña (dos camas individuales) y Habitación con Cama Grande
-- Espacios comunes: recepción, salas interiores, comedor y cocina equipada
-- Reservas: formulario en el sitio, teléfono o WhatsApp; recepción revisa cada solicitud (enviar el formulario no confirma la estadía)
+- Habitaciones: 17, cada una con baño privado. En el sitio se muestran la Habitación Doble Pequeña (dos camas individuales) y la Habitación con Cama Grande. Cada habitación recibe hasta 3 personas; para 4 o más, recepción arma la estadía con varias habitaciones.
+- Servicios incluidos: desayuno buffet, WiFi, TV cable, aire acondicionado, baño privado, estacionamiento y recepción 24 horas.
+- Horarios: check-in desde las 14:00 y check-out hasta las 12:00. Early check-in y late check-out: $10.000 por hora, sujeto a disponibilidad.
+- Reservas: formulario en el sitio, teléfono, WhatsApp o https://plataforma.hotelherencia.cl/reservar. Recepción revisa cada solicitud (enviar el formulario no confirma la estadía). No se pide abono previo, salvo delegaciones (50 % de la estadía). El saldo se paga al check-in.
+- Medios de pago: efectivo, tarjeta y transferencia.
 - Teléfono y WhatsApp: +56 9 5649 1501
 - Instagram: https://www.instagram.com/hotelherencia/
 - Google Maps: https://maps.app.goo.gl/XYgS4ZHtKSHauBpj8
@@ -22,5 +24,6 @@ Nota: este archivo es un resumen para asistentes de IA. No es una señal de Goog
 
 - [Inicio: hotel en Chillán, datos clave, habitaciones, servicios, preguntas frecuentes y contacto](https://www.hotelherencia.cl/)
 - [Política de tratamiento de datos](https://www.hotelherencia.cl/privacidad.html)
+- [Resumen ampliado para asistentes de IA](https://www.hotelherencia.cl/llms-full.txt)
 
 Última revisión: 2026-11-16

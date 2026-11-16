@@ -79,7 +79,7 @@
       ]
     },
     {
-      "source": "/llms.txt",
+      "source": "/(llms.txt|llms-full.txt)",
       "headers": [
         {
           "key": "Content-Type",
