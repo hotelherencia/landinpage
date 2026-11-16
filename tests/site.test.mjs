@@ -159,7 +159,7 @@ test('despliegue: docs y tests no se publican; /reservar redirige temporalmente 
     assert.ok(ignorados.includes('docs'));
     assert.ok(ignorados.includes('tests'));
     const reservar = vercel.redirects.find((r) => r.source === '/reservar');
-    assert.equal(reservar.destination, 'https://plataforma-salman-herencia-oficial.vercel.app/reservar');
+    assert.equal(reservar.destination, 'https://plataforma.hotelherencia.cl/reservar');
     assert.equal(reservar.permanent, false);
 });
 

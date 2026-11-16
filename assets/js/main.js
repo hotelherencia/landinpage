@@ -404,7 +404,7 @@ document.addEventListener('click', (evento) => {
 });
 
 function urlPlataforma() {
-    return String(window.LANDING_PLATAFORMA_URL || 'https://plataforma-salman-herencia-oficial.vercel.app').replace(/\/+$/, '');
+    return String(window.LANDING_PLATAFORMA_URL || 'https://plataforma.hotelherencia.cl').replace(/\/+$/, '');
 }
 
 function urlApi() {
