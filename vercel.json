@@ -98,6 +98,11 @@
       "source": "/privacidad",
       "destination": "/privacidad.html",
       "permanent": true
+    },
+    {
+      "source": "/reservar",
+      "destination": "https://plataforma-salman-herencia-oficial.vercel.app/reservar",
+      "permanent": false
     }
   ],
   "rewrites": [

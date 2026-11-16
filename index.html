@@ -44,7 +44,7 @@
     <script>document.documentElement.classList.add('js');</script>
     <!--
       TODO(dueño) para completar el JSON-LD del hotel (no se inventaron datos; agregar solo valores confirmados):
-      - "geo": {"@type": "GeoCoordinates", "latitude": ..., "longitude": ...}  (copiar desde Google Business Profile / Google Maps)
+      - "geo" se tomó del pin de la ficha "Hotel Herencia" a la que apunta hasMap (2026-11-16). Si el pin de la ficha cambia, actualizarlo aquí.
       - "postalCode" dentro de "address"
       - "priceRange" (ej. "$$" o rango en CLP), "checkinTime" / "checkoutTime" (ej. "15:00" / "12:00")
       - "email" de recepción, "numberOfRooms", "petsAllowed", "starRating" (solo si existe clasificación oficial SERNATUR)
@@ -141,6 +141,11 @@
           ],
           "telephone": "+56956491501",
           "hasMap": "https://maps.app.goo.gl/XYgS4ZHtKSHauBpj8",
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -36.5983065,
+            "longitude": -72.09031
+          },
           "sameAs": [
             "https://www.instagram.com/hotelherencia/",
             "https://maps.app.goo.gl/XYgS4ZHtKSHauBpj8"
@@ -385,7 +390,7 @@
 
                     <div class="hero__actions">
                         <a class="button button--primary" href="#contacto" data-cta-reserva>Consultar reserva</a>
-                        <a class="button button--primary" href="#contacto">Hablar con recepcionista</a>
+                        <a class="button button--primary" href="https://wa.me/56956491501" target="_blank" rel="noopener noreferrer">Hablar con recepción por WhatsApp</a>
                         <a class="button button--ghost" href="#ubicacion">Ver ubicación</a>
                     </div>
 
@@ -393,9 +398,12 @@
 
                 <figure class="hero__media" data-reveal>
                     <div class="hero__photo-frame">
-                        <img src="assets/img/hotel-herencia.jpg"
-                            alt="Exterior del Hotel Herencia con jardines y fachada principal" class="hero__photo"
-                            width="475" height="476" fetchpriority="high">
+                        <picture>
+                            <source srcset="assets/img/hotel-herencia.webp" type="image/webp">
+                            <img src="assets/img/hotel-herencia.jpg"
+                                alt="Exterior del Hotel Herencia con jardines y fachada principal" class="hero__photo"
+                                width="475" height="476" fetchpriority="high">
+                        </picture>
                     </div>
                     <figcaption class="hero__media-note">
                         Habitaciones cómodas, espacios acogedores y una ubicación práctica para recorrer Chillán.
@@ -508,10 +516,14 @@
                     </a>
                 </div>
 
-                <div class="map-card" data-reveal aria-hidden="true">
-                    <img class="location__image" src="assets/img/maps.png"
-                        alt="Mapa de ubicación de Hotel Herencia en Chillán" width="745" height="475" loading="lazy" decoding="async">
-                </div>
+                <figure class="map-card" data-reveal>
+                    <picture>
+                        <source srcset="assets/img/maps.webp" type="image/webp">
+                        <img class="location__image" src="assets/img/maps.png"
+                            alt="Mapa de ubicación de Hotel Herencia en Chillán" width="745" height="475" loading="lazy" decoding="async">
+                    </picture>
+                    <figcaption class="map-card__credito">Mapa: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">colaboradores de OpenStreetMap</a></figcaption>
+                </figure>
             </div>
         </section>
 

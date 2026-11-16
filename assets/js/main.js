@@ -350,6 +350,59 @@ function cargarRecaptchaDiferido() {
 
 cargarRecaptchaDiferido();
 
+/*
+ * Capa de eventos de medición, desacoplada de cualquier proveedor.
+ * Solo agrega objetos a window.dataLayer: no carga GA4, GTM ni píxeles y no incluye
+ * nombre, correo, teléfono, fechas ni mensaje. Sin un contenedor instalado (con
+ * consentimiento y base legal), nada sale del navegador. Ver docs/audits/REMEDIATION_REPORT.md.
+ */
+function nuevoIdEvento() {
+    try {
+        return crypto.randomUUID();
+    } catch {
+        return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+}
+
+function registrarEvento(nombre, datos = {}) {
+    try {
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({ event: nombre, ...datos, event_id: datos.event_id || nuevoIdEvento() });
+    } catch {
+        // La medición nunca debe interrumpir la consulta ni la navegación.
+    }
+}
+
+/** Toda salida hacia /reservar de la plataforma pasa por aquí (evento check_availability). */
+function irAReserva(enlace) {
+    registrarEvento('check_availability', { destino: 'plataforma_reservar' });
+    window.location.assign(enlace);
+}
+
+function seccionDe(elemento) {
+    const seccion = elemento.closest('section[id], footer');
+    return seccion ? (seccion.id || 'pie') : 'flotante';
+}
+
+document.addEventListener('click', (evento) => {
+    const enlace = evento.target instanceof Element ? evento.target.closest('a[href]') : null;
+
+    if (!enlace) {
+        return;
+    }
+
+    const href = enlace.getAttribute('href') || '';
+
+    if (href.startsWith('https://wa.me/')) {
+        registrarEvento('contact_whatsapp', { ubicacion: seccionDe(enlace) });
+    } else if (href.startsWith('tel:')) {
+        registrarEvento('contact_phone', { ubicacion: seccionDe(enlace) });
+    } else if (href.startsWith(`${urlPlataforma()}/reservar`)) {
+        // Enlace "Continuar con la reserva" que aparece tras enviar la consulta.
+        registrarEvento('check_availability', { destino: 'plataforma_reservar' });
+    }
+});
+
 function urlPlataforma() {
     return String(window.LANDING_PLATAFORMA_URL || 'https://plataforma-salman-herencia-oficial.vercel.app').replace(/\/+$/, '');
 }
@@ -432,7 +485,7 @@ async function irAReservarConFechas({ conLead }) {
                 ? 'Vas a la reserva sin consulta previa: allí escribirás nombre y contacto. Para llevarlos, completa el formulario y pulsa Enviar consulta, o rellena nombre, correo y teléfono antes de Ver disponibilidad.'
                 : 'Vas a la reserva solo con las fechas; el contacto se pide allá.'
         );
-        window.location.assign(enlaceSoloFechas);
+        irAReserva(enlaceSoloFechas);
         return;
     }
 
@@ -440,7 +493,7 @@ async function irAReservarConFechas({ conLead }) {
 
     if (!api || !disponibilidadBoton) {
         mostrarDisponibilidad('Vas a la reserva solo con las fechas; el contacto se pide allá.');
-        window.location.assign(enlaceSoloFechas);
+        irAReserva(enlaceSoloFechas);
         return;
     }
 
@@ -461,7 +514,7 @@ async function irAReservarConFechas({ conLead }) {
             mostrarDisponibilidad(
                 'No se pudo verificar el envío. Abriremos la reserva; completa nombre y contacto allí.'
             );
-            window.location.assign(enlaceSoloFechas);
+            irAReserva(enlaceSoloFechas);
             return;
         }
 
@@ -469,7 +522,7 @@ async function irAReservarConFechas({ conLead }) {
             mostrarDisponibilidad(
                 'No se pudo verificar el envío. Abriremos la reserva; completa nombre y contacto allí.'
             );
-            window.location.assign(enlaceSoloFechas);
+            irAReserva(enlaceSoloFechas);
             return;
         }
 
@@ -487,7 +540,7 @@ async function irAReservarConFechas({ conLead }) {
             mostrarDisponibilidad(
                 'No se pudo verificar el envío. Abriremos la reserva; completa nombre y contacto allí.'
             );
-            window.location.assign(enlaceSoloFechas);
+            irAReserva(enlaceSoloFechas);
             return;
         }
 
@@ -495,7 +548,7 @@ async function irAReservarConFechas({ conLead }) {
             mostrarDisponibilidad(
                 'No se pudo guardar la consulta. Abriremos la reserva; completa nombre y contacto allí.'
             );
-            window.location.assign(enlaceSoloFechas);
+            irAReserva(enlaceSoloFechas);
             return;
         }
 
@@ -508,12 +561,13 @@ async function irAReservarConFechas({ conLead }) {
             referencia = '';
         }
 
-        window.location.assign(enlaceContinuarReserva(cuerpo, referencia));
+        registrarEvento('generate_lead', { event_id: cabeceras['Idempotency-Key'], origen: 'ver_disponibilidad' });
+        irAReserva(enlaceContinuarReserva(cuerpo, referencia));
     } catch (error) {
         mostrarDisponibilidad(
             'No se pudo guardar la consulta. Abriremos la reserva; completa nombre y contacto allí.'
         );
-        window.location.assign(enlaceSoloFechas);
+        irAReserva(enlaceSoloFechas);
     } finally {
         disponibilidadBoton.disabled = false;
     }
@@ -681,6 +735,7 @@ form?.addEventListener('submit', async (event) => {
             }
 
             const continuar = enlaceContinuarReserva(cuerpo, referencia);
+            registrarEvento('generate_lead', { event_id: cabeceras['Idempotency-Key'], origen: 'formulario' });
             form.reset();
             syncDateConstraints();
             setStatusConContinuar(mensajeEnvio(respuesta.status), continuar);

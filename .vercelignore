@@ -2,3 +2,5 @@
 .git
 .vercel
 **/.DS_Store
+docs
+tests
