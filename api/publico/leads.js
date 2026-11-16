@@ -129,18 +129,34 @@ function hostsPermitidos() {
     return [HOST_CANONICO, HOST_WWW, ...extra];
 }
 
-function puntajeSuficiente(score) {
-    const minimo = process.env.RECAPTCHA_MIN_SCORE;
-    if (minimo === undefined || minimo === '') {
-        return true;
+const PUNTAJE_POR_DEFECTO = 0.5;
+
+/** Umbral efectivo. Acepta coma decimal ("0,5"); un valor ilegible ya no
+ * rechaza todo en silencio: se usa 0.5 (igual que la plataforma) y se avisa. */
+function puntajeMinimo() {
+    const crudo = process.env.RECAPTCHA_MIN_SCORE;
+    if (crudo === undefined || String(crudo).trim() === '') {
+        return { minimo: null, invalido: false };
     }
-    const valor = Number(minimo);
-    return Number.isFinite(valor) && typeof score === 'number' && score >= valor;
+    const valor = Number(String(crudo).trim().replace(',', '.'));
+    if (!Number.isFinite(valor) || valor < 0 || valor > 1) {
+        return { minimo: PUNTAJE_POR_DEFECTO, invalido: true };
+    }
+    return { minimo: valor, invalido: false };
 }
 
 // Último punto de decisión de este repo: sin verificación exitosa no se llama a DESTINO.
 // No registra token, secreto ni cuerpo; no devuelve error-codes al cliente.
-async function recaptchaValido(token, secreto) {
+/** Devuelve { ok, motivo, diagnostico }. El diagnóstico es solo para el log:
+ * códigos de error de Google, acción, host, puntaje y antigüedad; nunca el
+ * token ni el secreto, y no se devuelve al cliente. */
+async function verificarRecaptcha(token, secreto) {
+    const { minimo, invalido } = puntajeMinimo();
+    const diagnostico = {};
+    if (invalido) {
+        diagnostico.min_score_invalido = true;
+    }
+    let datos;
     try {
         const respuesta = await fetch(SITEVERIFY, {
             method: 'POST',
@@ -150,21 +166,34 @@ async function recaptchaValido(token, secreto) {
             signal: AbortSignal.timeout(5000)
         });
         if (!respuesta.ok) {
-            return false;
+            return { ok: false, motivo: `siteverify_http_${respuesta.status}`, diagnostico };
         }
-        const datos = await respuesta.json();
-        const marca = datos && typeof datos.challenge_ts === 'string' ? Date.parse(datos.challenge_ts) : NaN;
-        return Boolean(datos)
-            && datos.success === true
-            && datos.action === 'consulta'
-            && typeof datos.hostname === 'string'
-            && hostsPermitidos().includes(datos.hostname.toLowerCase())
-            && Number.isFinite(marca)
-            && Date.now() - marca <= ANTIGUEDAD_MAXIMA_MS
-            && puntajeSuficiente(datos.score);
+        datos = await respuesta.json();
     } catch {
-        return false;
+        return { ok: false, motivo: 'siteverify_no_responde', diagnostico };
     }
+    if (!datos || typeof datos !== 'object') {
+        return { ok: false, motivo: 'siteverify_ilegible', diagnostico };
+    }
+    const marca = typeof datos.challenge_ts === 'string' ? Date.parse(datos.challenge_ts) : NaN;
+    diagnostico.codigos = Array.isArray(datos['error-codes']) ? datos['error-codes'].slice(0, 5).map((c) => String(c).slice(0, 40)) : [];
+    diagnostico.accion = typeof datos.action === 'string' ? datos.action.slice(0, 40) : null;
+    diagnostico.hostname = typeof datos.hostname === 'string' ? datos.hostname.slice(0, 80) : null;
+    diagnostico.puntaje = typeof datos.score === 'number' ? datos.score : null;
+    diagnostico.edad_s = Number.isFinite(marca) ? Math.round((Date.now() - marca) / 1000) : null;
+    let motivo = null;
+    if (datos.success !== true) {
+        motivo = 'success_false';
+    } else if (datos.action !== 'consulta') {
+        motivo = 'accion_distinta';
+    } else if (typeof datos.hostname !== 'string' || !hostsPermitidos().includes(datos.hostname.toLowerCase())) {
+        motivo = 'host_no_permitido';
+    } else if (!Number.isFinite(marca) || Date.now() - marca > ANTIGUEDAD_MAXIMA_MS) {
+        motivo = 'token_vencido';
+    } else if (minimo !== null && !(typeof datos.score === 'number' && datos.score >= minimo)) {
+        motivo = 'puntaje_bajo';
+    }
+    return { ok: motivo === null, motivo, diagnostico };
 }
 
 function leerCuerpo(req) {
@@ -195,8 +224,9 @@ module.exports = async function handler(req, res) {
     res.setHeader('X-Request-Id', requestId);
     const statusOriginal = res.status.bind(res);
     let resultado = 'ok';
+    let extraLog = {};
     res.status = (codigo) => {
-        registrar({ request_id: requestId, metodo: req.method, estado: codigo, resultado, ms: Date.now() - inicio });
+        registrar({ request_id: requestId, metodo: req.method, estado: codigo, resultado, ms: Date.now() - inicio, ...extraLog });
         return statusOriginal(codigo);
     };
 
@@ -261,8 +291,20 @@ module.exports = async function handler(req, res) {
         return;
     }
 
-    if (!token || !(await recaptchaValido(token, secreto))) {
+    if (!token) {
         resultado = 'recaptcha_rechazado';
+        extraLog = { motivo: 'sin_token' };
+        res.status(403).json({ detail: 'no se pudo verificar el envío' });
+        return;
+    }
+
+    const veredicto = await verificarRecaptcha(token, secreto);
+    if (veredicto.diagnostico.min_score_invalido) {
+        extraLog = { min_score_invalido: true };
+    }
+    if (!veredicto.ok) {
+        resultado = 'recaptcha_rechazado';
+        extraLog = { motivo: veredicto.motivo, recaptcha: veredicto.diagnostico };
         res.status(403).json({ detail: 'no se pudo verificar el envío' });
         return;
     }

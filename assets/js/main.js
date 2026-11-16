@@ -895,6 +895,10 @@ function mensajeEnvio(estadoHttp) {
         return 'Revisa los datos del formulario e inténtalo de nuevo.';
     }
 
+    if (estadoHttp === 503) {
+        return 'No pudimos recibir tu consulta en este momento. Escríbenos por WhatsApp al +56 9 5649 1501 o inténtalo de nuevo más tarde.';
+    }
+
     return 'No se pudo enviar. Inténtalo por teléfono o WhatsApp.';
 }
 

@@ -258,3 +258,83 @@ test('el log estructurado no contiene datos personales, tokens ni secreto', asyn
         assert.ok(!lineas[0].includes(prohibido), prohibido);
     }
 });
+
+async function conLog(fn) {
+    const lineas = [];
+    const original = console.log;
+    console.log = (l) => lineas.push(l);
+    try {
+        await fn();
+    } finally {
+        console.log = original;
+    }
+    return lineas;
+}
+
+// Regresión fix-e2e: en producción el proxy respondía 403 sin dejar la causa en el log.
+test('un rechazo de Google deja motivo y códigos en el log, sin token ni secreto', async () => {
+    simularFetch({ siteverify: { success: false, 'error-codes': ['invalid-input-secret'] } });
+    const res = respuesta();
+    const lineas = await conLog(() => handler(peticion({ headers: cabecerasValidas }), res));
+    assert.equal(res.statusCode, 403);
+    const evento = JSON.parse(lineas[0]);
+    assert.equal(evento.resultado, 'recaptcha_rechazado');
+    assert.equal(evento.motivo, 'success_false');
+    assert.deepEqual(evento.recaptcha.codigos, ['invalid-input-secret']);
+    for (const prohibido of ['tttt', 'secreto-de-prueba']) {
+        assert.ok(!lineas[0].includes(prohibido), prohibido);
+    }
+});
+
+for (const [caso, sobre, motivo] of [
+    ['acción distinta', { action: 'login' }, 'accion_distinta'],
+    ['hostname ajeno', { hostname: 'evil.example' }, 'host_no_permitido'],
+    ['token antiguo', { challenge_ts: new Date(Date.now() - 300000).toISOString() }, 'token_vencido']
+]) {
+    test(`motivo en el log: ${caso}`, async () => {
+        simularFetch({ siteverify: verificacion(sobre) });
+        const res = respuesta();
+        const lineas = await conLog(() => handler(peticion({ headers: cabecerasValidas }), res));
+        assert.equal(JSON.parse(lineas[0]).motivo, motivo);
+    });
+}
+
+test('puntaje bajo queda registrado con el puntaje recibido', async () => {
+    process.env.RECAPTCHA_MIN_SCORE = '0.7';
+    simularFetch({ siteverify: verificacion({ score: 0.3 }) });
+    const res = respuesta();
+    const lineas = await conLog(() => handler(peticion({ headers: cabecerasValidas }), res));
+    const evento = JSON.parse(lineas[0]);
+    assert.equal(evento.motivo, 'puntaje_bajo');
+    assert.equal(evento.recaptcha.puntaje, 0.3);
+});
+
+test('RECAPTCHA_MIN_SCORE con coma decimal ("0,5") se entiende como 0.5', async () => {
+    process.env.RECAPTCHA_MIN_SCORE = '0,5';
+    simularFetch({ siteverify: verificacion({ score: 0.9 }) });
+    const res = respuesta();
+    await handler(peticion({ headers: cabecerasValidas }), res);
+    assert.equal(res.statusCode, 201);
+});
+
+test('RECAPTCHA_MIN_SCORE ilegible ya no rechaza todo: usa 0.5 y lo avisa en el log', async () => {
+    process.env.RECAPTCHA_MIN_SCORE = 'alto';
+    simularFetch({ siteverify: verificacion({ score: 0.9 }) });
+    const res = respuesta();
+    const lineas = await conLog(() => handler(peticion({ headers: cabecerasValidas }), res));
+    assert.equal(res.statusCode, 201);
+    assert.equal(JSON.parse(lineas[0]).min_score_invalido, true);
+
+    simularFetch({ siteverify: verificacion({ score: 0.2 }) });
+    const res2 = respuesta();
+    await handler(peticion({ headers: cabecerasValidas }), res2);
+    assert.equal(res2.statusCode, 403);
+});
+
+test('503 de la plataforma se reenvía y queda como destino_503 en el log', async () => {
+    simularFetch({ destino: { status: 503, body: '{"detail":"x"}' } });
+    const res = respuesta();
+    const lineas = await conLog(() => handler(peticion({ headers: cabecerasValidas }), res));
+    assert.equal(res.statusCode, 503);
+    assert.equal(JSON.parse(lineas[0]).resultado, 'destino_503');
+});
