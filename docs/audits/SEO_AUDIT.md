@@ -90,3 +90,12 @@ Los hallazgos de esta ronda son menores.
 - **Severidad:** media. **Estado:** no verificable.
 - **Evidencia:** `index.html`, tarjeta `hero__media-stat--bottom`. Es un dato de terceros que cambia con el tiempo, y desde aquí no se pudo confirmar.
 - **Acción:** confirmar la nota vigente en el extranet de Booking, actualizarla y fecharla ("8,3 en Booking, nov. 2026"), o quitarla. No va al schema, a propósito.
+
+## Actualización (misma fecha, datos del paquete 11-11 / Anexo A)
+
+Con los datos confirmados del hotel se completó lo que estaba pendiente en SEO-05 y parte de SEO-09, y se corrigieron afirmaciones que contradecían el inventario (POL-001):
+
+- El JSON-LD de `Hotel` ahora incluye `checkinTime` 14:00, `checkoutTime` 12:00, `numberOfRooms` 17, `priceRange` referencial `CLP 47.000 – 65.000`, `paymentAccepted`, `ReserveAction` hacia `https://plataforma.hotelherencia.cl/reservar` y amenidades solo confirmadas (WiFi, estacionamiento, desayuno buffet, aire acondicionado, TV cable, baño privado, recepción 24 horas). Siguen fuera `Offer`, `aggregateRating`, `starRating`, `petsAllowed`, `email` y `postalCode`.
+- El FAQ visible (y su JSON-LD, que debe coincidir palabra por palabra) incorpora horarios, medios de pago y la regla de abono. Se dejó de afirmar terraza en habitaciones, servicio a la habitación, cocina equipada y habitaciones familiares.
+- Sigue pendiente: mascotas, costo del estacionamiento, política de cancelación (fuentes en contradicción), autorización para publicar tarifas exactas por tipo, correo, código postal y la nota «8,3 en Booking» (SEO-10).
+- El detalle operativo y el checklist de GBP / Hotel Center están en `docs/integrations/GOOGLE_HOTELS.md`.

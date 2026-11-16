@@ -4,10 +4,10 @@ Estado: **propuesta. No hay campañas creadas ni presupuesto comprometido.** Cad
 
 ## 1. Punto de partida (verificado)
 
-- Una sola landing (`/`) con propuesta de valor verificable: ubicación a pasos de Av. Argentina, desayuno, estacionamiento, WiFi, aire acondicionado, 2 tipos de habitación y fotos reales.
+- Una sola landing (`/`) con propuesta de valor verificable: ubicación a pasos de Av. Argentina, desayuno buffet, estacionamiento, WiFi, aire acondicionado, recepción 24 horas, 17 habitaciones (en la página se muestran 2 tipos) y fotos reales.
 - Los CTA son "Consultar reserva" (formulario o plataforma), WhatsApp, teléfono e Instagram. Enviar el formulario **no confirma** la reserva.
 - La medición está preparada (`dataLayer`: `generate_lead`, `check_availability`, `contact_whatsapp`, `contact_phone`), pero **no hay herramienta instalada**, así que hoy no se puede medir el costo por consulta.
-- No hay tarifas públicas ni política de cancelación publicada. Eso limita los anuncios: no se puede prometer precio.
+- El schema declara un rango referencial (CLP 47.000 – 65.000, IVA incluido), pero no hay tarifas exactas por tipo en la página ni política de cancelación publicada (las fuentes se contradicen). Eso limita los anuncios: no se puede prometer un precio reservable.
 
 ## 2. Hipótesis
 
