@@ -174,3 +174,15 @@ test('el mapa (renderizado de OpenStreetMap) muestra la atribución que exige la
     assert.match(tarjeta, /openstreetmap\.org\/copyright/);
     assert.doesNotMatch(html['index.html'], /class="map-card"[^>]*aria-hidden/);
 });
+
+test('seguridad: /reservar apunta a un host fijo (sin redirección abierta), HSTS y Referrer-Policy estricta', () => {
+    const vercel = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
+    for (const r of vercel.redirects) {
+        // Ningún destino se arma con parámetros del visitante (:path, $1, query).
+        assert.doesNotMatch(r.destination, /[:$]\w|\?/, `destino dinámico en ${r.source}`);
+        assert.ok(r.destination.startsWith('/') || r.destination.startsWith('https://plataforma.hotelherencia.cl/'), r.destination);
+    }
+    const cabeceras = Object.fromEntries(vercel.headers[0].headers.map((h) => [h.key, h.value]));
+    assert.equal(cabeceras['Referrer-Policy'], 'strict-origin-when-cross-origin');
+    assert.match(cabeceras['Strict-Transport-Security'], /max-age=\d{7,}/);
+});
