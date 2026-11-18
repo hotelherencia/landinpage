@@ -496,6 +496,12 @@ button {
     line-height: 1.7;
 }
 
+/* landinpage#1: cada tarjeta enlaza a /reservar con su tipo (sin números de habitación). */
+.room-showcase__cta {
+    display: inline-flex;
+    margin-bottom: 0.85rem;
+}
+
 .room-showcase .rooms-carousel {
     margin-top: 0;
     width: min(100%, 46rem);

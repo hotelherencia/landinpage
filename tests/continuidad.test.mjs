@@ -184,3 +184,14 @@ test('«Ver disponibilidad» con contacto completo no envía nada sin confirmaci
     assert.match(codigo, /if \(!confirmado\) \{[\s\S]*?mostrarDisponibilidadConEnlace\([\s\S]*?return;\s*\}/);
     assert.equal(llamadas.length, 0);
 });
+
+test('landinpage#1: «Reservar este tipo» conserva el tipo y suma la referencia opaca', () => {
+    const { ctx, oyentes, Element } = cargar();
+    ctx.guardarReferencia(REF);
+    const tarjeta = new Element('https://plataforma.hotelherencia.cl/reservar?tipo=matrimonial');
+    oyentes.click({ target: tarjeta });
+    const url = new URL(tarjeta.href);
+    assert.equal(url.searchParams.get('tipo'), 'matrimonial');
+    assert.equal(url.searchParams.get('ref'), REF);
+    assert.deepEqual([...url.searchParams.keys()].sort(), ['ref', 'tipo']);
+});
