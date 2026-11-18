@@ -321,3 +321,20 @@ test('el texto público no afirma servicios contradichos ni pone valoraciones en
     assert.match(leer('robots.txt'), /Google-Extended/);
 });
 
+
+test('landinpage#1: cada tarjeta de habitación reserva por tipo y ningún texto promete un número de habitación', () => {
+    const portada = html['index.html'];
+    const enlaces = [...portada.matchAll(/<a[^>]*data-reservar-tipo="([^"]+)"[^>]*href="([^"]+)"[^>]*>([^<]+)<\/a>/g)];
+    assert.deepEqual(enlaces.map((m) => m[1]).sort(), ['doble', 'matrimonial']);
+    for (const [, tipo, href, texto] of enlaces) {
+        const url = new URL(href);
+        assert.equal(url.origin + url.pathname, 'https://plataforma.hotelherencia.cl/reservar');
+        assert.deepEqual([...url.searchParams.entries()], [['tipo', tipo]]);
+        assert.equal(texto.trim(), 'Reservar este tipo');
+    }
+    for (const archivo of ['index.html', 'llms.txt', 'llms-full.txt']) {
+        const texto = leer(archivo);
+        assert.doesNotMatch(texto, /HAB-\d/, archivo);
+        assert.doesNotMatch(texto, /habitaci[oó]n\s+(n[°º.]?\s*)?\d{1,3}\b/i, archivo);
+    }
+});
