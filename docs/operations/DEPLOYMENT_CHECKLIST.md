@@ -42,6 +42,7 @@ curl -sI $B/ | grep -i content-security-policy                                # 
 ```
 
 - [ ] Abrir el sitio en un móvil real: hero, carruseles, mapa con atribución y los botones WhatsApp y Llamar.
+- [ ] Cada tarjeta de habitación tiene «Reservar este tipo» y abre la plataforma con el tipo preseleccionado (`/reservar?tipo=doble` o `?tipo=matrimonial`, desde el 2026-11-18).
 - [ ] Hacer una consulta de prueba **solo si recepción está avisada**, y descartarla después en el backend.
 - [ ] En la consola del navegador, `window.dataLayer` muestra `contact_whatsapp` al tocar WhatsApp.
 - [ ] Search Console: inspeccionar la URL `/` y pedir indexación si cambió el contenido.
