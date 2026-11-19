@@ -1,4 +1,4 @@
-const DESTINO = 'https://servicio-production-a2d7.up.railway.app/publico/leads';
+const DESTINO = process.env.SERVICIO_LEADS_URL || 'https://servicio-production-a2d7.up.railway.app/publico/leads';
 const TOPE_CUERPO = 8192;
 const TOPE_RESPUESTA = 65536;
 const SITEVERIFY = 'https://www.google.com/recaptcha/api/siteverify';
