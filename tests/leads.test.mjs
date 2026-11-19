@@ -165,7 +165,8 @@ test('falla de red hacia DESTINO → 502 genérico', async () => {
     const res = respuesta();
     await handler(peticion({ headers: cabecerasValidas }), res);
     assert.equal(res.statusCode, 502);
-    assert.deepEqual(res.body, { detail: 'no se pudo enviar' });
+    assert.equal(res.body.detail, 'no se pudo enviar');
+    assert.equal(res.body.request_id, res.headers['x-request-id']);
 });
 
 test('reenvía a la plataforma un token de reCAPTCHA propio (Google acepta cada token una sola vez)', async () => {
@@ -355,7 +356,8 @@ test('una respuesta HTML del destino no se refleja: 502 genérico', async () => 
     const res = respuesta();
     const lineas = await conLog(() => handler(peticion({ headers: cabecerasValidas }), res));
     assert.equal(res.statusCode, 502);
-    assert.deepEqual(res.body, { detail: 'no se pudo enviar' });
+    assert.equal(res.body.detail, 'no se pudo enviar');
+    assert.equal(res.body.request_id, res.headers['x-request-id']);
     assert.notEqual(res.headers['content-type'], 'text/html');
     assert.equal(JSON.parse(lineas[0]).resultado, 'destino_no_json_502');
 });
@@ -365,5 +367,133 @@ test('JSON declarado pero ilegible tampoco se refleja', async () => {
     const res = respuesta();
     await handler(peticion({ headers: cabecerasValidas }), res);
     assert.equal(res.statusCode, 502);
-    assert.deepEqual(res.body, { detail: 'no se pudo enviar' });
+    assert.equal(res.body.detail, 'no se pudo enviar');
+    assert.equal(res.body.request_id, res.headers['x-request-id']);
+});
+
+// --- Reintento hacia la plataforma (fix-forms) ---
+
+function simularDestino(respuestas) {
+    // respuestas: lista de funciones (opciones) => Response | Promise que se rechaza.
+    llamadas = [];
+    let n = 0;
+    globalThis.fetch = async (url, opciones) => {
+        llamadas.push({ url, opciones });
+        if (url === SITEVERIFY) {
+            return new Response(JSON.stringify(verificacion()), { status: 200, headers: { 'content-type': 'application/json' } });
+        }
+        const paso = respuestas[Math.min(n, respuestas.length - 1)];
+        n += 1;
+        return paso(opciones);
+    };
+}
+
+const json = (status, cuerpo) => () => new Response(JSON.stringify(cuerpo), { status, headers: { 'content-type': 'application/json' } });
+const caida = () => () => { throw new TypeError('fetch failed'); };
+const colgada = () => (opciones) => new Promise((_, reject) => {
+    opciones.signal.addEventListener('abort', () => reject(opciones.signal.reason));
+});
+
+const tiemposOriginales = { ...handler.TIEMPOS };
+afterEach(() => Object.assign(handler.TIEMPOS, tiemposOriginales));
+
+function destinos() {
+    return llamadas.filter((l) => l.url === DESTINO);
+}
+
+test('error de red hacia la plataforma: reintenta una vez con la MISMA Idempotency-Key y el mismo token', async () => {
+    handler.TIEMPOS.PAUSA_REINTENTO_MS = 5;
+    simularDestino([caida(), json(201, { referencia: 'r1' })]);
+    const res = respuesta();
+    const lineas = await conLog(() => handler(peticion({ headers: { ...cabecerasValidas, 'x-recaptcha-token-servicio': 's'.repeat(40) } }), res));
+    assert.equal(res.statusCode, 201);
+    const [a, b] = destinos();
+    assert.equal(destinos().length, 2);
+    assert.equal(a.opciones.headers['Idempotency-Key'], 'clave-123');
+    assert.equal(b.opciones.headers['Idempotency-Key'], 'clave-123');
+    assert.equal(b.opciones.headers['X-Recaptcha-Token'], a.opciones.headers['X-Recaptcha-Token']);
+    assert.equal(b.opciones.body, a.opciones.body);
+    assert.equal(lineas.length, 1, 'una sola línea de log por petición');
+    const log = JSON.parse(lineas[0]);
+    assert.equal(log.intentos, 2);
+    assert.deepEqual(log.destino, ['red', 201]);
+    assert.equal(log.resultado, 'ok');
+});
+
+test('502/503/504 o HTML de la plataforma (Railway desplegando) se reintentan una vez', async () => {
+    handler.TIEMPOS.PAUSA_REINTENTO_MS = 5;
+    for (const primero of [json(503, { detail: 'x' }), json(502, { detail: 'x' }), () => new Response('<html>Application failed to respond</html>', { status: 502, headers: { 'content-type': 'text/html' } })]) {
+        simularDestino([primero, json(200, { referencia: 'r1', reintento: true })]);
+        const res = respuesta();
+        await handler(peticion({ headers: cabecerasValidas }), res);
+        assert.equal(res.statusCode, 200);
+        assert.equal(destinos().length, 2);
+    }
+});
+
+test('si el reintento también falla, 502 con request_id y el log lo explica', async () => {
+    handler.TIEMPOS.PAUSA_REINTENTO_MS = 5;
+    simularDestino([caida(), caida()]);
+    const res = respuesta();
+    const lineas = await conLog(() => handler(peticion({ headers: { ...cabecerasValidas, 'x-request-id': 'ABCD2345-1' } }), res));
+    assert.equal(res.statusCode, 502);
+    assert.equal(res.body.request_id, 'ABCD2345-1');
+    const log = JSON.parse(lineas[0]);
+    assert.equal(log.request_id, 'ABCD2345-1');
+    assert.equal(log.resultado, 'destino_caido');
+    assert.equal(log.intentos, 2);
+});
+
+test('timeout de un intento: aborta, reintenta y respeta el presupuesto total', async () => {
+    Object.assign(handler.TIEMPOS, { INTENTO_MS: 80, PAUSA_REINTENTO_MS: 5, PRESUPUESTO_MS: 2000, MINIMO_PARA_REINTENTAR_MS: 50 });
+    simularDestino([colgada(), json(201, { referencia: 'r' })]);
+    const res = respuesta();
+    const lineas = await conLog(() => handler(peticion({ headers: cabecerasValidas }), res));
+    assert.equal(res.statusCode, 201);
+    assert.deepEqual(JSON.parse(lineas[0]).destino, ['timeout', 201]);
+
+    Object.assign(handler.TIEMPOS, { INTENTO_MS: 80, PRESUPUESTO_MS: 100, MINIMO_PARA_REINTENTAR_MS: 50 });
+    simularDestino([colgada(), json(201, {})]);
+    const res2 = respuesta();
+    const inicio = Date.now();
+    const lineas2 = await conLog(() => handler(peticion({ headers: cabecerasValidas }), res2));
+    assert.equal(res2.statusCode, 502);
+    assert.ok(Date.now() - inicio < 1000);
+    assert.equal(JSON.parse(lineas2[0]).resultado, 'destino_sin_respuesta');
+    assert.equal(destinos().length, 1, 'sin presupuesto no se reintenta');
+});
+
+test('403, 409, 422 y 429 de la plataforma son definitivos: no se reintentan', async () => {
+    for (const estado of [403, 409, 422, 429]) {
+        simularDestino([json(estado, { detail: 'x' }), json(201, {})]);
+        const res = respuesta();
+        await handler(peticion({ headers: cabecerasValidas }), res);
+        assert.equal(res.statusCode, estado);
+        assert.equal(destinos().length, 1);
+    }
+});
+
+test('el log de un envío exitoso trae puntaje, acción, host y tiempos, nunca datos ni tokens', async () => {
+    const res = respuesta();
+    const lineas = await conLog(() => handler(peticion({ headers: cabecerasValidas }), res));
+    const log = JSON.parse(lineas[0]);
+    assert.equal(log.recaptcha.puntaje, 0.9);
+    assert.equal(log.recaptcha.accion, 'consulta');
+    assert.equal(log.recaptcha.hostname, 'www.hotelherencia.cl');
+    assert.equal(typeof log.siteverify_ms, 'number');
+    assert.equal(typeof log.destino_ms, 'number');
+    assert.equal(log.intentos, 1);
+    assert.ok(!lineas[0].includes('tttt'));
+    assert.ok(!lineas[0].includes('ana@example.com'));
+});
+
+test('un error inesperado no tumba la función: 500 JSON y su línea de log', async () => {
+    const req = peticion({ headers: cabecerasValidas });
+    const res = respuesta();
+    const setHeader = res.setHeader;
+    res.setHeader = function (k, v) { if (k === 'Cache-Control') { throw new Error('boom'); } return setHeader.call(this, k, v); };
+    const lineas = await conLog(() => handler(req, res));
+    assert.equal(res.statusCode, 500);
+    assert.equal(res.body.detail, 'no se pudo enviar');
+    assert.equal(JSON.parse(lineas[0]).resultado, 'error_interno');
 });

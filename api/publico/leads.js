@@ -217,8 +217,9 @@ function leerCuerpo(req) {
     });
 }
 
-module.exports = async function handler(req, res) {
+async function atender(req, res) {
     const inicio = Date.now();
+    const tiempos = {};
     const entrante = cabeceraUnica(req.headers && req.headers['x-request-id']);
     const requestId = PATRON_REQUEST_ID.test(entrante) ? entrante : randomUUID().replace(/-/g, '').slice(0, 16);
     res.setHeader('X-Request-Id', requestId);
@@ -226,8 +227,13 @@ module.exports = async function handler(req, res) {
     let resultado = 'ok';
     let extraLog = {};
     res.status = (codigo) => {
-        registrar({ request_id: requestId, metodo: req.method, estado: codigo, resultado, ms: Date.now() - inicio, ...extraLog });
+        registrar({ request_id: requestId, metodo: req.method, estado: codigo, resultado, ms: Date.now() - inicio, ...tiempos, ...extraLog });
         return statusOriginal(codigo);
+    };
+    // Para el envoltorio de handler: un error inesperado igual deja su línea de log y JSON.
+    res.errorInterno = () => {
+        resultado = 'error_interno';
+        res.status(500).json({ detail: 'no se pudo enviar', request_id: requestId });
     };
 
     if (req.method !== 'POST') {
@@ -298,14 +304,19 @@ module.exports = async function handler(req, res) {
         return;
     }
 
+    const inicioSiteverify = Date.now();
     const veredicto = await verificarRecaptcha(token, secreto);
+    tiempos.siteverify_ms = Date.now() - inicioSiteverify;
+    // Puntaje, acción, host y antigüedad del token van siempre al log (también si pasa):
+    // así un 403 posterior de la plataforma se puede comparar con lo que vio el proxy.
+    extraLog = { recaptcha: veredicto.diagnostico };
     if (veredicto.diagnostico.min_score_invalido) {
-        extraLog = { min_score_invalido: true };
+        extraLog.min_score_invalido = true;
     }
     if (!veredicto.ok) {
         resultado = 'recaptcha_rechazado';
-        extraLog = { motivo: veredicto.motivo, recaptcha: veredicto.diagnostico };
-        res.status(403).json({ detail: 'no se pudo verificar el envío' });
+        extraLog = { ...extraLog, motivo: veredicto.motivo };
+        res.status(403).json({ detail: 'no se pudo verificar el envío', request_id: requestId });
         return;
     }
 
@@ -318,27 +329,53 @@ module.exports = async function handler(req, res) {
         'X-Request-Id': requestId
     };
 
-    let respuesta;
+    const envio = await reenviar(cabeceras, JSON.stringify(limpio), inicio);
+    extraLog = { ...extraLog, intentos: envio.intentos, destino: envio.estados, destino_ms: envio.ms };
 
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    if (envio.fallo) {
+        resultado = envio.fallo;
+        res.status(502).json({ detail: 'no se pudo enviar', request_id: requestId });
+        return;
+    }
+
+    const { estado, texto } = envio;
+    resultado = estado < 300 ? 'ok' : `destino_${estado}`;
+    res.status(estado);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.send(texto);
+}
+
+// Presupuesto total bajo el maxDuration de la función (vercel.json: 30 s): siteverify (≤ 5 s)
+// + hasta dos intentos hacia la plataforma de ≤ 10 s cada uno + una pausa corta.
+// Objeto mutable solo para que las pruebas acorten los tiempos.
+const TIEMPOS = { PRESUPUESTO_MS: 26000, INTENTO_MS: 10000, PAUSA_REINTENTO_MS: 600, MINIMO_PARA_REINTENTAR_MS: 3000 };
+
+/** Un intento hacia DESTINO. Devuelve { estado, texto } si hubo JSON válido; si no, { fallo }.
+ * SA-LND-01 (auditoría 2026-11-17): la respuesta se sirve en el origen de la landing. Solo se
+ * reenvía JSON y siempre con tipo JSON fijo: una página de error HTML del destino no se refleja. */
+async function unIntento(cabeceras, cuerpo, limiteMs) {
+    let respuesta;
     try {
         respuesta = await fetch(DESTINO, {
             method: 'POST',
             headers: cabeceras,
-            body: JSON.stringify(limpio),
+            body: cuerpo,
             redirect: 'error',
-            signal: AbortSignal.timeout(12000)
+            signal: AbortSignal.timeout(limiteMs)
         });
-    } catch {
-        resultado = 'destino_caido';
-        res.status(502).json({ detail: 'no se pudo enviar' });
-        return;
+    } catch (error) {
+        const porTiempo = error && (error.name === 'TimeoutError' || error.name === 'AbortError');
+        return { fallo: porTiempo ? 'destino_sin_respuesta' : 'destino_caido', estado: porTiempo ? 'timeout' : 'red' };
     }
-
-    // SA-LND-01 (auditoría 2026-11-17): la respuesta se sirve en el origen de la
-    // landing. Solo se reenvía JSON y siempre con tipo JSON fijo: una página de
-    // error HTML del destino (o un tipo distinto) no se refleja tal cual.
+    let texto;
+    try {
+        texto = Buffer.from(await respuesta.arrayBuffer()).subarray(0, TOPE_RESPUESTA).toString('utf8');
+    } catch {
+        return { fallo: 'destino_cortado', estado: respuesta.status };
+    }
     const tipo = String(respuesta.headers.get('content-type') || '').toLowerCase();
-    const texto = Buffer.from(await respuesta.arrayBuffer()).subarray(0, TOPE_RESPUESTA).toString('utf8');
     let esJson = tipo.split(';')[0].trim() === 'application/json';
     if (esJson) {
         try {
@@ -347,21 +384,59 @@ module.exports = async function handler(req, res) {
             esJson = false;
         }
     }
-    res.setHeader('Cache-Control', 'no-store');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
     if (!esJson) {
-        resultado = `destino_no_json_${respuesta.status}`;
-        res.status(502).json({ detail: 'no se pudo enviar' });
-        return;
+        return { fallo: `destino_no_json_${respuesta.status}`, estado: respuesta.status };
     }
+    return { estado: respuesta.status, texto };
+}
 
-    resultado = respuesta.status < 300 ? 'ok' : `destino_${respuesta.status}`;
-    res.status(respuesta.status);
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.send(texto);
+/** Reenvía a la plataforma y reintenta UNA vez ante error de red, timeout, respuesta no JSON o
+ * 5xx, con la MISMA Idempotency-Key: la plataforma guarda por clave, así que si el primer intento
+ * alcanzó a guardar, el segundo devuelve el original (200, reintento=true) y no duplica. */
+async function reenviar(cabeceras, cuerpo, inicio) {
+    const estados = [];
+    const t0 = Date.now();
+    let ultimo = null;
+    for (let intento = 1; intento <= 2; intento += 1) {
+        const restante = TIEMPOS.PRESUPUESTO_MS - (Date.now() - inicio);
+        if (intento > 1) {
+            if (restante < TIEMPOS.MINIMO_PARA_REINTENTAR_MS + TIEMPOS.PAUSA_REINTENTO_MS) {
+                break;
+            }
+            await new Promise((resolve) => setTimeout(resolve, TIEMPOS.PAUSA_REINTENTO_MS));
+        }
+        const limite = Math.max(100, Math.min(TIEMPOS.INTENTO_MS, TIEMPOS.PRESUPUESTO_MS - (Date.now() - inicio)));
+        ultimo = await unIntento(cabeceras, cuerpo, limite);
+        estados.push(ultimo.estado);
+        const reintentable = ultimo.fallo || ultimo.estado >= 500;
+        if (!reintentable) {
+            break;
+        }
+    }
+    return { ...ultimo, intentos: estados.length, estados, ms: Date.now() - t0 };
+}
+
+module.exports = async function handler(req, res) {
+    try {
+        await atender(req, res);
+    } catch {
+        // Ningún error inesperado deja la función caída (500 de Vercel sin JSON ni log propio).
+        if (!res.headersSent) {
+            try {
+                if (typeof res.errorInterno === 'function') {
+                    res.errorInterno();
+                } else {
+                    res.status(500).json({ detail: 'no se pudo enviar' });
+                }
+            } catch {
+                // Sin más que hacer.
+            }
+        }
+    }
 };
 
 module.exports.limpiarConsulta = limpiarConsulta;
+module.exports.TIEMPOS = TIEMPOS;
 
 module.exports.config = {
     api: {

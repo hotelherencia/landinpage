@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/publico/leads.js": {
+      "maxDuration": 30
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
