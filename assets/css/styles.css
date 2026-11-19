@@ -1305,7 +1305,7 @@ main:focus {
 
 .field input:focus,
 .field textarea:focus {
-    outline: none;
+    outline: 2px solid transparent;
     border-color: var(--color-brand);
     box-shadow: 0 0 0 3px rgba(23, 51, 38, 0.16);
 }
@@ -1722,9 +1722,9 @@ main:focus {
         scroll-snap-type: x mandatory;
         gap: var(--space-3);
         padding-bottom: var(--space-2);
-        margin-inline: calc(-1 * (100vw - var(--container)) / 2);
-        padding-inline: calc((100vw - var(--container)) / 2);
-        scroll-padding-inline: calc((100vw - var(--container)) / 2);
+        margin-inline: 0;
+        padding-inline: 0;
+        scroll-padding-inline: 0;
     }
 
     .hotel-gallery__item {

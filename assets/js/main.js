@@ -901,13 +901,13 @@ function problemaConsulta(cuerpo) {
         return 'Indica tu nombre.';
     }
 
-    if (cuerpo.correo.length > 320 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cuerpo.correo)) {
+    if (cuerpo.correo.length > 320 || !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(cuerpo.correo)) {
         return 'Indica un correo válido.';
     }
 
     const digitos = cuerpo.telefono.replace(/\D/g, '');
 
-    if (cuerpo.telefono.length > 40 || digitos.length < 8 || digitos.length > 15) {
+    if (cuerpo.telefono.length > 40 || !/^[+\d\s().-]+$/.test(cuerpo.telefono) || digitos.length < 8 || digitos.length > 15) {
         return 'Indica un teléfono válido.';
     }
 
@@ -1051,6 +1051,10 @@ function mensajeEnvio(estadoHttp, codigo = '') {
         return 'Consulta enviada. Responderemos a la brevedad.';
     }
 
+    if (estadoHttp === 409) {
+        return conCodigo('Ya tenemos una consulta reciente registrada con tus datos. Escríbenos por WhatsApp si necesitas actualizarla.', codigo);
+    }
+
     if (estadoHttp === 429) {
         return conCodigo('Recibimos demasiados intentos; espera un minuto e inténtalo de nuevo.', codigo);
     }
@@ -1115,7 +1119,11 @@ form?.addEventListener('submit', async (event) => {
             return;
         }
 
-        setStatus(mensajeResultadoEnvio(resultado), 'error');
+        const mensajeError = mensajeResultadoEnvio(resultado);
+        setStatus(mensajeError, 'error');
+        if (resultado.tipo === 'respuesta' && resultado.estado === 422 && resultado.json?.campo) {
+            marcarCampoConError(String(resultado.json.campo));
+        }
     } catch (error) {
         setStatus(conCodigo(`No pudimos enviar tu consulta. Inténtalo de nuevo o escríbenos por ${WHATSAPP_TEXTO}.`, 'JS'), 'error');
     } finally {

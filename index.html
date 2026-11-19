@@ -477,7 +477,7 @@
     <main id="contenido" tabindex="-1">
         <section class="hero" id="inicio" aria-labelledby="hero-titulo">
             <div class="container hero__grid">
-                <div class="hero__copy" data-reveal>
+                <div class="hero__copy">
                     <p class="eyebrow">Hotel en Chillán · Región de Ñuble</p>
                     <h1 id="hero-titulo">Hotel en Chillán para descansar cerca del centro.</h1>
                     <p class="hero__lede">
@@ -496,7 +496,7 @@
                         </a>
                     </div>
                     <p class="hero__alt">
-                        ¿Prefieres que te contactemos? <a href="#contacto" data-cta-reserva>Envía una consulta</a> · <a href="#ubicacion">Ver ubicación</a>
+                        ¿Prefieres que te contactemos? <a href="#contacto">Envía una consulta</a> · <a href="#ubicacion">Ver ubicación</a>
                     </p>
 
                     <ul class="hero__chips" aria-label="Atributos principales del hotel">
@@ -509,7 +509,7 @@
                     </ul>
                 </div>
 
-                <figure class="hero__media" data-reveal>
+                <figure class="hero__media">
                     <picture>
                         <source srcset="assets/img/hotel-herencia.webp 1x, assets/img/hotel-herencia-950.webp 2x" type="image/webp">
                         <img src="assets/img/hotel-herencia.jpg"
@@ -703,9 +703,9 @@
                             <figure>
                                 <picture>
                                     <source type="image/webp" srcset="assets/img/124824018-640.webp 640w, assets/img/124824018.webp 1024w" sizes="(max-width: 860px) 85vw, 300px">
-                                    <img src="assets/img/124824018.jpg" alt="Cocina del hotel con barra y electrodomésticos" width="1024" height="685" loading="lazy" decoding="async">
+                                    <img src="assets/img/124824018.jpg" alt="Barra y área de servicio de desayuno del hotel" width="1024" height="685" loading="lazy" decoding="async">
                                 </picture>
-                                <figcaption>Cocina</figcaption>
+                                <figcaption>Área de desayuno</figcaption>
                             </figure>
                         </li>
                     </ul>
@@ -985,16 +985,16 @@
                             <legend>Tu estadía</legend>
                             <div class="contact-form__grid contact-form__grid--3">
                                 <label class="field">
-                                    <span>Llegada <abbr class="req" title="obligatorio">*</abbr></span>
-                                    <input type="date" id="checkin" name="checkin" required>
+                                    <span>Llegada (opcional)</span>
+                                    <input type="date" id="checkin" name="checkin">
                                 </label>
                                 <label class="field">
-                                    <span>Salida <abbr class="req" title="obligatorio">*</abbr></span>
-                                    <input type="date" id="checkout" name="checkout" required>
+                                    <span>Salida (opcional)</span>
+                                    <input type="date" id="checkout" name="checkout">
                                 </label>
                                 <label class="field">
                                     <span>Huéspedes <abbr class="req" title="obligatorio">*</abbr></span>
-                                    <input type="number" id="guests" name="guests" min="1" max="8" value="2" inputmode="numeric" required>
+                                    <input type="number" id="guests" name="guests" min="1" max="30" value="2" inputmode="numeric" required>
                                 </label>
                             </div>
                         </fieldset>

@@ -136,7 +136,7 @@ const PUNTAJE_POR_DEFECTO = 0.5;
 function puntajeMinimo() {
     const crudo = process.env.RECAPTCHA_MIN_SCORE;
     if (crudo === undefined || String(crudo).trim() === '') {
-        return { minimo: null, invalido: false };
+        return { minimo: PUNTAJE_POR_DEFECTO, invalido: false };
     }
     const valor = Number(String(crudo).trim().replace(',', '.'));
     if (!Number.isFinite(valor) || valor < 0 || valor > 1) {
@@ -235,6 +235,9 @@ async function atender(req, res) {
         resultado = 'error_interno';
         res.status(500).json({ detail: 'no se pudo enviar', request_id: requestId });
     };
+
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
 
     if (req.method !== 'POST') {
         resultado = 'metodo_no_permitido';
