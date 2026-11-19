@@ -40,6 +40,13 @@ document.addEventListener('keydown', (evento) => {
     }
 });
 
+/* Un toque fuera del menú abierto (sobre el fondo oscurecido) lo cierra. */
+document.addEventListener('click', (evento) => {
+    if (siteHeader?.dataset.navOpen === 'true' && evento.target && !siteHeader.contains(evento.target)) {
+        setNavOpen(false);
+    }
+});
+
 /* Cabecera con borde y sombra apenas se baja de la parte superior. */
 if (siteHeader && typeof window.addEventListener === 'function') {
     const marcarCabecera = () => siteHeader.classList.toggle('is-scrolled', window.scrollY > 8);

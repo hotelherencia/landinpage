@@ -441,9 +441,9 @@ main:focus {
     margin-bottom: var(--space-10);
 }
 
-.section-heading p,
-.location__copy > p,
-.contact__intro > p {
+.section-heading p:not(.eyebrow),
+.location__copy > p:not(.eyebrow),
+.contact__intro > p:not(.eyebrow) {
     margin: var(--space-4) 0 0;
     color: var(--color-ink-muted);
     font-size: var(--text-lg);
@@ -620,7 +620,7 @@ main:focus {
 
 .trust__list li {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--space-3);
     font-size: var(--text-sm);
     line-height: 1.35;
@@ -923,7 +923,17 @@ main:focus {
     background: var(--color-bg-alt);
 }
 
+.hotel-gallery__item {
+    min-height: 0;
+}
+
+.hotel-gallery__item picture {
+    display: block;
+    height: 100%;
+}
+
 .hotel-gallery__item img {
+    display: block;
     width: 100%;
     height: 100%;
     aspect-ratio: 3 / 2;
@@ -937,6 +947,10 @@ main:focus {
 
 .hotel-gallery__item--destacada {
     grid-row: span 2;
+}
+
+.hotel-gallery__item--destacada img {
+    aspect-ratio: auto;
 }
 
 .hotel-gallery__item figcaption {
@@ -954,8 +968,10 @@ main:focus {
 /* ---------- Servicios ---------- */
 
 .amenities {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    --por-fila: 7;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: var(--space-3);
     margin: 0 0 var(--space-8);
     padding: 0;
@@ -963,10 +979,11 @@ main:focus {
 }
 
 .amenities li {
+    flex: 0 0 calc((100% - (var(--por-fila) - 1) * var(--space-3)) / var(--por-fila));
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     text-align: center;
     gap: var(--space-2);
     padding: var(--space-4) var(--space-3);
@@ -1305,9 +1322,14 @@ main:focus {
 }
 
 .contact-form__footer {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-3);
+}
+
+.contact-form__footer .button {
+    height: 3.25rem;
+    white-space: nowrap;
 }
 
 .contact-form__note {
@@ -1422,11 +1444,9 @@ main:focus {
 }
 
 .site-footer__marca img {
+    display: block;
     width: auto;
-    height: 2.75rem;
-    padding: 0.3rem;
-    border-radius: var(--radius-sm);
-    background: #fff;
+    height: 2.5rem;
 }
 
 .site-footer__name {
@@ -1569,6 +1589,11 @@ main:focus {
         display: none;
     }
 
+    .trust__list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-5) var(--space-6);
+    }
+
     .hero__actions .button {
         font-size: var(--text-sm);
     }
@@ -1612,6 +1637,25 @@ main:focus {
         display: flex;
     }
 
+    /* backdrop-filter haría de la cabecera el bloque contenedor del fondo fijo */
+    .site-header[data-nav-open="true"] {
+        backdrop-filter: none;
+        background: var(--color-bg);
+    }
+
+    /* Fondo oscurecido bajo el menú abierto; la página no se desplaza detrás */
+    .site-header[data-nav-open="true"]::before {
+        content: "";
+        position: fixed;
+        inset: var(--header-h) 0 0 0;
+        z-index: -1;
+        background: rgba(15, 37, 28, 0.42);
+    }
+
+    body:has(.site-header[data-nav-open="true"]) {
+        overflow: hidden;
+    }
+
     .site-nav a:not(.button) {
         min-height: 3rem;
         padding: 0 var(--space-3);
@@ -1638,7 +1682,7 @@ main:focus {
     }
 
     .hero__media {
-        justify-self: center;
+        justify-self: start;
         width: min(100%, 29.6875rem);
     }
 
@@ -1660,7 +1704,7 @@ main:focus {
     }
 
     .amenities {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        --por-fila: 4;
     }
 
     .card-grid--3 {
@@ -1724,7 +1768,7 @@ main:focus {
     }
 
     .amenities {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        --por-fila: 2;
     }
 
     .trust__list {
@@ -1754,8 +1798,8 @@ main:focus {
         grid-column: 1 / -1;
     }
 
-    .contact-form__footer .button {
-        width: 100%;
+    .contact-form__footer {
+        grid-template-columns: 1fr;
     }
 
     .hero__badge {
