@@ -104,7 +104,7 @@ test('imágenes de habitaciones y galería ofrecen WebP liviano (640 y 1024 px)'
     for (const f of fuentes) assert.match(f, /-640\.webp 640w, [^ ]+\.webp 1024w/);
 });
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.woff2': 'font/woff2', '.ico': 'image/x-icon' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.woff2': 'font/woff2', '.ico': 'image/x-icon' };
 
 test('responsivo: sin desborde horizontal a 320, 375 y 1440 px (si hay Playwright)', async (t) => {
     let chromium;
