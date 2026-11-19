@@ -78,7 +78,7 @@ test('Hotel: NAP coherente con el texto visible, geo numérico y sin datos inven
 test('el FAQ en JSON-LD coincide palabra por palabra con el FAQ visible', () => {
     const faq = jsonLd(html['index.html']).find((b) => b['@type'] === 'FAQPage');
     const seccion = html['index.html'].split('id="preguntas-frecuentes"')[1].split('</section>')[0];
-    const visibles = [...seccion.matchAll(/<h3>([\s\S]*?)<\/h3>\s*<p>([\s\S]*?)<\/p>/g)].map((m) => [normalizar(m[1]), normalizar(m[2])]);
+    const visibles = [...seccion.matchAll(/<h3>([\s\S]*?)<\/h3>\s*(?:<\/summary>\s*)?<p>([\s\S]*?)<\/p>/g)].map((m) => [normalizar(m[1]), normalizar(m[2])]);
     assert.equal(faq.mainEntity.length, visibles.length);
     faq.mainEntity.forEach((q, i) => {
         assert.equal(q.name, visibles[i][0]);
@@ -312,8 +312,10 @@ test('el texto público no afirma servicios contradichos ni pone valoraciones en
             assert.ok(!txt.includes(prohibido) || txt.includes(`no se afirma`) || txt.includes('no se publican'), `${archivo} no debe afirmar «${prohibido}»`);
         }
     }
-    assert.match(visible, /check-in es a partir de las 14:00/);
-    assert.match(visible, /check-out hasta las 12:00/);
+    // Texto al huésped: Llegada/Salida, nunca «check-in»/«check-out» (los horarios del schema siguen en checkinTime/checkoutTime).
+    assert.match(visible, /Llegada es a partir de las 14:00/);
+    assert.match(visible, /Salida hasta las 12:00/);
+    assert.doesNotMatch(visible, /check-?in|check-?out/i);
     assert.match(leer('llms.txt'), /plataforma\.hotelherencia\.cl\/reservar/);
     assert.match(leer('llms.txt'), /Nombre: Hotel Herencia$/m);
     assert.doesNotMatch(leer('llms.txt'), /Herencia Hotel Boutique/);

@@ -32,6 +32,21 @@ navLinks.forEach((link) => {
     link.addEventListener('click', () => setNavOpen(false));
 });
 
+/* Menú del celular: Escape lo cierra y devuelve el foco al botón. */
+document.addEventListener('keydown', (evento) => {
+    if (evento.key === 'Escape' && siteHeader?.dataset.navOpen === 'true') {
+        setNavOpen(false);
+        navToggle?.focus();
+    }
+});
+
+/* Cabecera con borde y sombra apenas se baja de la parte superior. */
+if (siteHeader && typeof window.addEventListener === 'function') {
+    const marcarCabecera = () => siteHeader.classList.toggle('is-scrolled', window.scrollY > 8);
+    window.addEventListener('scroll', marcarCabecera, { passive: true });
+    marcarCabecera();
+}
+
 if (revealElements.length > 0) {
     const revealObserver = new IntersectionObserver((entries, observer) => {
         entries.forEach((entry) => {
@@ -362,7 +377,7 @@ function validateStayDates() {
     }
 
     if (checkoutInput.value <= checkinInput.value) {
-        checkoutInput.setCustomValidity('La fecha de salida debe ser posterior al check-in.');
+        checkoutInput.setCustomValidity('La fecha de salida debe ser posterior a la llegada.');
         return false;
     }
 
@@ -827,6 +842,33 @@ document.querySelectorAll('[data-cta-reserva]').forEach((enlace) => {
     });
 });
 
+/* Señala en el formulario el campo que explica el error y lleva el foco ahí (WCAG 3.3.1). */
+const CAMPO_POR_ERROR = [
+    [/nombre/i, '#name'],
+    [/correo/i, '#email'],
+    [/tel[eé]fono/i, '#phone'],
+    [/mensaje/i, '#message'],
+    [/personas/i, '#guests'],
+    [/salida/i, '#checkout'],
+    [/llegada|fechas/i, '#checkin']
+];
+
+function marcarCampoConError(mensaje) {
+    if (!form || typeof form.querySelectorAll !== 'function') {
+        return;
+    }
+
+    form.querySelectorAll('[aria-invalid="true"]').forEach((campo) => campo.removeAttribute('aria-invalid'));
+    const par = CAMPO_POR_ERROR.find(([patron]) => patron.test(mensaje));
+    const campo = par ? form.querySelector(par[1]) : null;
+
+    if (campo) {
+        campo.setAttribute('aria-invalid', 'true');
+        campo.focus?.();
+        campo.addEventListener('input', () => campo.removeAttribute('aria-invalid'), { once: true });
+    }
+}
+
 function texto(valor) {
     return String(valor ?? '').trim();
 }
@@ -918,6 +960,8 @@ form?.addEventListener('submit', async (event) => {
     }
 
     submitButton.disabled = true;
+    const textoBoton = submitButton.textContent;
+    submitButton.textContent = 'Enviando…';
 
     try {
         const datos = Object.fromEntries(new FormData(form).entries());
@@ -926,6 +970,7 @@ form?.addEventListener('submit', async (event) => {
 
         if (problema) {
             setStatus(problema, 'error');
+            marcarCampoConError(problema);
             return;
         }
 
@@ -991,6 +1036,7 @@ form?.addEventListener('submit', async (event) => {
         setStatus('No se pudo enviar. Inténtalo por teléfono o WhatsApp.', 'error');
     } finally {
         submitButton.disabled = false;
+        submitButton.textContent = textoBoton;
     }
 });
 
