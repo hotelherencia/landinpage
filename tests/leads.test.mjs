@@ -58,7 +58,7 @@ function simularFetch({ siteverify = verificacion(), destino = { status: 201, bo
             if (falloDestino) {
                 throw new Error('red');
             }
-            return new Response(destino.body, { status: destino.status, headers: { 'content-type': 'application/json' } });
+            return new Response(destino.body, { status: destino.status, headers: { 'content-type': destino.tipo || 'application/json' } });
         }
         throw new Error(`URL inesperada: ${url}`);
     };
@@ -337,4 +337,33 @@ test('503 de la plataforma se reenvía y queda como destino_503 en el log', asyn
     const lineas = await conLog(() => handler(peticion({ headers: cabecerasValidas }), res));
     assert.equal(res.statusCode, 503);
     assert.equal(JSON.parse(lineas[0]).resultado, 'destino_503');
+});
+
+// SA-LND-01: la respuesta se sirve en el origen de la landing; solo se reenvía JSON con tipo fijo.
+test('la respuesta reenviada siempre sale como JSON con nosniff', async () => {
+    simularFetch({ destino: { status: 201, body: '{"referencia":"abc"}', tipo: 'application/json; charset=utf-8' } });
+    const res = respuesta();
+    await handler(peticion({ headers: cabecerasValidas }), res);
+    assert.equal(res.statusCode, 201);
+    assert.equal(res.headers['content-type'], 'application/json; charset=utf-8');
+    assert.equal(res.headers['x-content-type-options'], 'nosniff');
+    assert.equal(res.body, '{"referencia":"abc"}');
+});
+
+test('una respuesta HTML del destino no se refleja: 502 genérico', async () => {
+    simularFetch({ destino: { status: 502, body: '<html><script>alert(1)</script></html>', tipo: 'text/html' } });
+    const res = respuesta();
+    const lineas = await conLog(() => handler(peticion({ headers: cabecerasValidas }), res));
+    assert.equal(res.statusCode, 502);
+    assert.deepEqual(res.body, { detail: 'no se pudo enviar' });
+    assert.notEqual(res.headers['content-type'], 'text/html');
+    assert.equal(JSON.parse(lineas[0]).resultado, 'destino_no_json_502');
+});
+
+test('JSON declarado pero ilegible tampoco se refleja', async () => {
+    simularFetch({ destino: { status: 200, body: '<b>no json</b>' } });
+    const res = respuesta();
+    await handler(peticion({ headers: cabecerasValidas }), res);
+    assert.equal(res.statusCode, 502);
+    assert.deepEqual(res.body, { detail: 'no se pudo enviar' });
 });

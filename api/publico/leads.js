@@ -334,13 +334,30 @@ module.exports = async function handler(req, res) {
         return;
     }
 
+    // SA-LND-01 (auditoría 2026-11-17): la respuesta se sirve en el origen de la
+    // landing. Solo se reenvía JSON y siempre con tipo JSON fijo: una página de
+    // error HTML del destino (o un tipo distinto) no se refleja tal cual.
+    const tipo = String(respuesta.headers.get('content-type') || '').toLowerCase();
     const texto = Buffer.from(await respuesta.arrayBuffer()).subarray(0, TOPE_RESPUESTA).toString('utf8');
-    const tipo = respuesta.headers.get('content-type') || 'application/json; charset=utf-8';
+    let esJson = tipo.split(';')[0].trim() === 'application/json';
+    if (esJson) {
+        try {
+            JSON.parse(texto);
+        } catch {
+            esJson = false;
+        }
+    }
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    if (!esJson) {
+        resultado = `destino_no_json_${respuesta.status}`;
+        res.status(502).json({ detail: 'no se pudo enviar' });
+        return;
+    }
 
     resultado = respuesta.status < 300 ? 'ok' : `destino_${respuesta.status}`;
     res.status(respuesta.status);
-    res.setHeader('Content-Type', tipo);
-    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.send(texto);
 };
 
