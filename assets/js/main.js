@@ -401,19 +401,35 @@ checkinInput?.addEventListener('change', () => {
 checkoutInput?.addEventListener('change', validateStayDates);
 
 const RECAPTCHA_SITE_KEY = '6LcKehguAAAAAG07HWp0QQOHJyMxQeWfQl3epp7n';
+const WHATSAPP_TEXTO = 'WhatsApp al +56 9 5649 1501';
+// Si el script de Google no carga (bloqueador, protección estricta de Firefox, red), se sabe
+// al instante por su evento error y no se espera 8 s para mostrar un mensaje genérico.
+let recaptchaBloqueado = false;
 
 function prepararRecaptcha() {
     if (!RECAPTCHA_SITE_KEY || document.querySelector('script[data-recaptcha]')) {
         return;
     }
 
+    recaptchaBloqueado = false;
     const script = document.createElement('script');
     script.src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(RECAPTCHA_SITE_KEY)}`;
     script.async = true;
     script.dataset.recaptcha = 'v3';
+    script.onerror = () => {
+        recaptchaBloqueado = true;
+        // Se quita para que un intento posterior (p. ej. tras desactivar el bloqueador) lo vuelva a pedir.
+        script.remove?.();
+    };
     document.head.append(script);
 }
 
+/** Error con causa legible: 'recaptcha_bloqueado' (no cargó) o 'recaptcha' (cargó pero no dio token). */
+function errorRecaptcha(causa) {
+    return Object.assign(new Error(causa), { causa });
+}
+
+/** Pide un token NUEVO a Google justo al enviar: cada token sirve una vez y vence a los 2 min. */
 function tokenRecaptcha(accion) {
     if (!RECAPTCHA_SITE_KEY) {
         return Promise.resolve('');
@@ -425,38 +441,51 @@ function tokenRecaptcha(accion) {
         const inicio = Date.now();
 
         const ejecutar = () => {
-            window.grecaptcha.ready(() => {
-                window.grecaptcha
-                    .execute(RECAPTCHA_SITE_KEY, { action: accion })
-                    .then((token) => {
-                        if (typeof token === 'string' && token.length > 20) {
-                            resolve(token);
-                            return;
-                        }
+            try {
+                window.grecaptcha.ready(() => {
+                    Promise.resolve(window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: accion }))
+                        .then((token) => {
+                            if (typeof token === 'string' && token.length > 20) {
+                                resolve(token);
+                                return;
+                            }
 
-                        reject(new Error('recaptcha'));
-                    })
-                    .catch(reject);
-            });
+                            reject(errorRecaptcha('recaptcha'));
+                        })
+                        .catch(() => reject(errorRecaptcha('recaptcha')));
+                });
+            } catch {
+                reject(errorRecaptcha('recaptcha'));
+            }
         };
 
-        if (window.grecaptcha) {
+        if (window.grecaptcha && typeof window.grecaptcha.ready === 'function') {
             ejecutar();
             return;
         }
 
         const reloj = window.setInterval(() => {
-            if (window.grecaptcha) {
+            if (window.grecaptcha && typeof window.grecaptcha.ready === 'function') {
                 window.clearInterval(reloj);
                 ejecutar();
-            } else if (Date.now() - inicio > 8000) {
+            } else if (recaptchaBloqueado) {
                 window.clearInterval(reloj);
-                reject(new Error('recaptcha'));
+                reject(errorRecaptcha('recaptcha_bloqueado'));
+            } else if (Date.now() - inicio > 10000) {
+                window.clearInterval(reloj);
+                // Ni cargó ni dio error en 10 s: en la práctica, bloqueado o red muy lenta.
+                reject(errorRecaptcha('recaptcha_bloqueado'));
             }
         }, 50);
     });
 
-    return pedir().catch(() => pedir());
+    return pedir().catch((error) => {
+        if (error && error.causa === 'recaptcha_bloqueado') {
+            throw error;
+        }
+
+        return pedir();
+    });
 }
 
 /**
@@ -481,8 +510,35 @@ function limpiarDatosPersonales() {
     }
 }
 
-function mensajeFalloCaptcha() {
-    return 'No se pudo verificar el envío. Actualiza la página o escríbenos por teléfono o WhatsApp.';
+/** Código corto que ve el huésped y que viaja como X-Request-Id: con él se ubica el envío en los logs. */
+function nuevoCodigoEnvio() {
+    const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let codigo = '';
+
+    try {
+        const azar = crypto.getRandomValues(new Uint8Array(8));
+        azar.forEach((n) => { codigo += letras[n % letras.length]; });
+    } catch {
+        codigo = Date.now().toString(36).toUpperCase().slice(-8);
+    }
+
+    return codigo;
+}
+
+function conCodigo(mensaje, codigo) {
+    return codigo ? `${mensaje} (código ${codigo})` : mensaje;
+}
+
+function mensajeFalloCaptcha(codigo = '') {
+    return conCodigo(`No pudimos verificar el envío. Actualiza la página e inténtalo de nuevo, o escríbenos por ${WHATSAPP_TEXTO}.`, codigo);
+}
+
+function mensajeCaptchaBloqueado(codigo = '') {
+    return conCodigo(
+        'No pudimos cargar la verificación de seguridad de Google (reCAPTCHA). Si usas un bloqueador de anuncios, VPN o la protección '
+        + `estricta de Firefox, desactívalos para este sitio y vuelve a intentarlo, o escríbenos por ${WHATSAPP_TEXTO}.`,
+        codigo
+    );
 }
 
 /*
@@ -734,81 +790,24 @@ async function irAReservarConFechas({ conLead, confirmado = false }) {
     disponibilidadBoton.disabled = true;
 
     try {
-        const cabeceras = {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'Idempotency-Key': crypto.randomUUID()
-        };
-        let token = '';
-        let tokenServicio = '';
+        const resultado = await enviarConsulta(api, cuerpo);
 
-        try {
-            [token, tokenServicio] = await tokensRecaptchaConsulta();
-        } catch {
+        if (resultado.tipo !== 'respuesta' || (resultado.estado !== 201 && resultado.estado !== 200)) {
             mostrarDisponibilidadConEnlace(
-                'No se pudo verificar el envío. Inténtalo de nuevo en unos segundos.',
+                mensajeResultadoEnvio(resultado),
                 enlaceSoloFechas,
                 'Seguir sin mis datos'
             );
             return;
         }
 
-        if (RECAPTCHA_SITE_KEY && !token) {
-            mostrarDisponibilidadConEnlace(
-                'No se pudo verificar el envío. Inténtalo de nuevo en unos segundos.',
-                enlaceSoloFechas,
-                'Seguir sin mis datos'
-            );
-            return;
-        }
-
-        if (token) {
-            cabeceras['X-Recaptcha-Token'] = token;
-        }
-
-        if (tokenServicio) {
-            cabeceras['X-Recaptcha-Token-Servicio'] = tokenServicio;
-        }
-
-        const respuesta = await fetch(`${api}/publico/leads`, {
-            method: 'POST',
-            headers: cabeceras,
-            body: JSON.stringify(cuerpo)
-        });
-
-        if (respuesta.status === 403) {
-            mostrarDisponibilidadConEnlace(
-                'No se pudo verificar el envío. Inténtalo de nuevo en unos segundos.',
-                enlaceSoloFechas,
-                'Seguir sin mis datos'
-            );
-            return;
-        }
-
-        if (respuesta.status !== 201 && respuesta.status !== 200) {
-            mostrarDisponibilidadConEnlace(
-                mensajeEnvio(respuesta.status),
-                enlaceSoloFechas,
-                'Seguir sin mis datos'
-            );
-            return;
-        }
-
-        let referencia = '';
-
-        try {
-            const json = await respuesta.json();
-            referencia = typeof json.referencia === 'string' ? json.referencia : '';
-        } catch {
-            referencia = '';
-        }
-
+        const referencia = typeof resultado.json?.referencia === 'string' ? resultado.json.referencia : '';
         guardarReferencia(referencia);
-        registrarEvento('generate_lead', { event_id: cabeceras['Idempotency-Key'], origen: 'ver_disponibilidad' });
+        registrarEvento('generate_lead', { event_id: resultado.clave, origen: 'ver_disponibilidad' });
         irAReserva(enlaceContinuarReserva(cuerpo, referencia));
     } catch (error) {
         mostrarDisponibilidadConEnlace(
-            'No se pudo guardar la consulta. Inténtalo de nuevo o escríbenos por WhatsApp.',
+            conCodigo(`No pudimos guardar la consulta. Inténtalo de nuevo o escríbenos por ${WHATSAPP_TEXTO}.`, 'JS'),
             enlaceSoloFechas,
             'Seguir sin mis datos'
         );
@@ -931,24 +930,147 @@ function problemaConsulta(cuerpo) {
     return '';
 }
 
-function mensajeEnvio(estadoHttp) {
+const ESTADOS_REINTENTABLES = new Set([502, 503, 504]);
+const ESPERA_REINTENTO_MS = 1500;
+const TIEMPO_MAXIMO_ENVIO_MS = 35000;
+
+function esperar(ms) {
+    return new Promise((resolve) => { window.setTimeout(resolve, ms); });
+}
+
+function senalConTope(ms) {
+    try {
+        return AbortSignal.timeout(ms);
+    } catch {
+        return undefined;
+    }
+}
+
+/**
+ * Envía la consulta al proxy /api/publico/leads. Los tokens de reCAPTCHA se piden en el momento
+ * (nunca se reutilizan ni envejecen) y, ante un error de red o un 502/503/504 (servicio
+ * despertando o en pleno despliegue), se reintenta UNA vez con tokens nuevos y la MISMA
+ * Idempotency-Key: si el primer intento sí quedó guardado, la plataforma devuelve el original y no
+ * se duplica. Devuelve { tipo, estado, json, codigo, clave } sin lanzar.
+ *   tipo: 'respuesta' (hubo HTTP), 'red' (sin respuesta), 'captcha_bloqueado', 'captcha'.
+ */
+async function enviarConsulta(api, cuerpo) {
+    const clave = crypto.randomUUID();
+    const codigo = nuevoCodigoEnvio();
+
+    for (let intento = 1; intento <= 2; intento += 1) {
+        let token = '';
+        let tokenServicio = '';
+
+        try {
+            [token, tokenServicio] = await tokensRecaptchaConsulta();
+        } catch (error) {
+            return { tipo: error && error.causa === 'recaptcha_bloqueado' ? 'captcha_bloqueado' : 'captcha', codigo, clave };
+        }
+
+        if (RECAPTCHA_SITE_KEY && !token) {
+            return { tipo: 'captcha', codigo, clave };
+        }
+
+        const cabeceras = {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'Idempotency-Key': clave,
+            'X-Request-Id': `${codigo}-${intento}`
+        };
+
+        if (token) {
+            cabeceras['X-Recaptcha-Token'] = token;
+        }
+
+        if (tokenServicio) {
+            cabeceras['X-Recaptcha-Token-Servicio'] = tokenServicio;
+        }
+
+        let respuesta;
+
+        try {
+            respuesta = await fetch(`${api}/publico/leads`, {
+                method: 'POST',
+                headers: cabeceras,
+                body: JSON.stringify(cuerpo),
+                signal: senalConTope(TIEMPO_MAXIMO_ENVIO_MS)
+            });
+        } catch {
+            if (intento === 1) {
+                await esperar(ESPERA_REINTENTO_MS);
+                continue;
+            }
+
+            return { tipo: 'red', codigo, clave };
+        }
+
+        if (ESTADOS_REINTENTABLES.has(respuesta.status) && intento === 1) {
+            await esperar(ESPERA_REINTENTO_MS);
+            continue;
+        }
+
+        let json = null;
+
+        try {
+            json = await respuesta.json();
+        } catch {
+            json = null;
+        }
+
+        return { tipo: 'respuesta', estado: respuesta.status, json, codigo, clave };
+    }
+
+    return { tipo: 'red', codigo, clave };
+}
+
+/** Texto para el huésped según el resultado de enviarConsulta (siempre con el código de envío). */
+function mensajeResultadoEnvio(resultado) {
+    const { tipo, estado, codigo } = resultado;
+
+    if (tipo === 'captcha_bloqueado') {
+        return mensajeCaptchaBloqueado(codigo);
+    }
+
+    if (tipo === 'captcha' || estado === 403) {
+        return mensajeFalloCaptcha(codigo);
+    }
+
+    if (tipo === 'red') {
+        return conCodigo(
+            `No pudimos conectar con el servidor. Revisa tu conexión (si usas VPN, prueba sin ella) e inténtalo de nuevo, o escríbenos por ${WHATSAPP_TEXTO}.`,
+            codigo
+        );
+    }
+
+    return mensajeEnvio(estado, codigo);
+}
+
+function mensajeEnvio(estadoHttp, codigo = '') {
     if (estadoHttp === 201 || estadoHttp === 200) {
         return 'Consulta enviada. Responderemos a la brevedad.';
     }
 
     if (estadoHttp === 429) {
-        return 'Recibimos demasiados intentos; espera un minuto e inténtalo de nuevo.';
+        return conCodigo('Recibimos demasiados intentos; espera un minuto e inténtalo de nuevo.', codigo);
     }
 
     if (estadoHttp === 422) {
-        return 'Revisa los datos del formulario e inténtalo de nuevo.';
+        return conCodigo('Revisa los datos del formulario e inténtalo de nuevo.', codigo);
+    }
+
+    if (estadoHttp === 403) {
+        return mensajeFalloCaptcha(codigo);
     }
 
     if (estadoHttp === 503) {
-        return 'No pudimos recibir tu consulta en este momento. Escríbenos por WhatsApp al +56 9 5649 1501 o inténtalo de nuevo más tarde.';
+        return conCodigo(`No pudimos recibir tu consulta en este momento. Escríbenos por ${WHATSAPP_TEXTO} o inténtalo de nuevo en unos minutos.`, codigo);
     }
 
-    return 'No se pudo enviar. Inténtalo por teléfono o WhatsApp.';
+    return conCodigo(
+        `No pudimos enviar tu consulta por un problema de nuestro lado. Inténtalo de nuevo en unos minutos o escríbenos por ${WHATSAPP_TEXTO}.`,
+        codigo
+    );
 }
 
 form?.addEventListener('submit', async (event) => {
@@ -958,7 +1080,7 @@ form?.addEventListener('submit', async (event) => {
     const api = urlApi();
 
     if (!api) {
-        setStatus('No se pudo enviar. Inténtalo por teléfono o WhatsApp.', 'error');
+        setStatus(`No pudimos enviar tu consulta desde aquí. Escríbenos por ${WHATSAPP_TEXTO}.`, 'error');
         return;
     }
 
@@ -981,66 +1103,21 @@ form?.addEventListener('submit', async (event) => {
             return;
         }
 
-        const cabeceras = {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'Idempotency-Key': crypto.randomUUID()
-        };
-        let token = '';
-        let tokenServicio = '';
+        const resultado = await enviarConsulta(api, cuerpo);
 
-        try {
-            [token, tokenServicio] = await tokensRecaptchaConsulta();
-        } catch {
-            setStatus(mensajeFalloCaptcha(), 'error');
-            return;
-        }
-
-        if (RECAPTCHA_SITE_KEY && !token) {
-            setStatus(mensajeFalloCaptcha(), 'error');
-            return;
-        }
-
-        if (token) {
-            cabeceras['X-Recaptcha-Token'] = token;
-        }
-
-        if (tokenServicio) {
-            cabeceras['X-Recaptcha-Token-Servicio'] = tokenServicio;
-        }
-
-        const respuesta = await fetch(`${api}/publico/leads`, {
-            method: 'POST',
-            headers: cabeceras,
-            body: JSON.stringify(cuerpo)
-        });
-
-        if (respuesta.status === 201 || respuesta.status === 200) {
-            let referencia = '';
-
-            try {
-                const json = await respuesta.json();
-                referencia = typeof json.referencia === 'string' ? json.referencia : '';
-            } catch {
-                referencia = '';
-            }
-
+        if (resultado.tipo === 'respuesta' && (resultado.estado === 201 || resultado.estado === 200)) {
+            const referencia = typeof resultado.json?.referencia === 'string' ? resultado.json.referencia : '';
             guardarReferencia(referencia);
             const continuar = enlaceContinuarReserva(cuerpo, referencia);
-            registrarEvento('generate_lead', { event_id: cabeceras['Idempotency-Key'], origen: 'formulario' });
+            registrarEvento('generate_lead', { event_id: resultado.clave, origen: 'formulario' });
             limpiarDatosPersonales();
-            setStatusConContinuar(mensajeEnvio(respuesta.status), continuar);
+            setStatusConContinuar(mensajeEnvio(resultado.estado), continuar);
             return;
         }
 
-        if (respuesta.status === 403) {
-            setStatus(mensajeFalloCaptcha(), 'error');
-            return;
-        }
-
-        setStatus(mensajeEnvio(respuesta.status), 'error');
+        setStatus(mensajeResultadoEnvio(resultado), 'error');
     } catch (error) {
-        setStatus('No se pudo enviar. Inténtalo por teléfono o WhatsApp.', 'error');
+        setStatus(conCodigo(`No pudimos enviar tu consulta. Inténtalo de nuevo o escríbenos por ${WHATSAPP_TEXTO}.`, 'JS'), 'error');
     } finally {
         submitButton.disabled = false;
         submitButton.textContent = textoBoton;
