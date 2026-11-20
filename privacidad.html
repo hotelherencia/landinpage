@@ -79,7 +79,37 @@
                 <p><a href="/#contacto">Volver al formulario</a> · <a href="/">Ir a Hotel Herencia, hotel en Chillán</a></p>
             </div>
         </section>
+            <section id="cookies">
+            <h2>Cookies y preferencias de consentimiento (Ley 21.719)</h2>
+            <p>Las cookies o almacenamientos esenciales permiten proteger los formularios contra abuso (reCAPTCHA) y conservar temporalmente tu referencia de consulta cuando eliges continuar a reservar. La analítica opcional permanece desactivada salvo que la autorices expresamente en el aviso de cookies.</p>
+            <p><button type="button" class="btn btn--ghost" data-abrir-cookies>Cambiar preferencias de cookies</button></p>
+        </section>
     </main>
+    <aside class="cookie-banner" id="cookie-banner" role="dialog" aria-label="Preferencias de cookies" hidden>
+        <p class="cookie-banner__titulo">Preferencias de privacidad y cookies</p>
+        <p class="cookie-banner__texto">
+            Usamos cookies esenciales para la seguridad y envío de solicitudes. La analítica opcional solo se activa si la autorizas.
+            Revisa el detalle en nuestra <a href="/privacidad.html#cookies">política de tratamiento de datos</a>.
+        </p>
+        <div class="cookie-banner__acciones">
+            <button type="button" class="btn btn--primary" data-cookie-aceptar>Aceptar todas</button>
+            <button type="button" class="btn btn--ghost" data-cookie-rechazar>Solo esenciales</button>
+            <button type="button" class="btn btn--ghost" data-cookie-abrir-config>Configurar</button>
+        </div>
+        <div class="cookie-banner__config" data-cookie-config hidden>
+            <label class="cookie-banner__opcion">
+                <input type="checkbox" checked disabled>
+                <span>Esenciales (seguridad y formulario, siempre activas)</span>
+            </label>
+            <label class="cookie-banner__opcion">
+                <input type="checkbox" data-cookie-analitica>
+                <span>Analítica opcional (medición de navegación sin datos personales)</span>
+            </label>
+            <button type="button" class="btn btn--primary" data-cookie-guardar>Guardar preferencias</button>
+        </div>
+    </aside>
+
+    <script src="assets/js/cookies.js" defer></script>
 </body>
 
 </html>

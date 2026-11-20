@@ -1075,6 +1075,7 @@
                 <a href="https://maps.app.goo.gl/XYgS4ZHtKSHauBpj8" target="_blank" rel="noopener noreferrer">Google Maps</a>
                 <a href="https://www.instagram.com/hotelherencia/" target="_blank" rel="noopener noreferrer">Instagram</a>
                 <a href="/privacidad.html">Política de tratamiento de datos</a>
+                <button type="button" class="cookie-link-pie" data-abrir-cookies>Preferencias de cookies</button>
             </div>
         </div>
         <div class="container site-footer__legal">
@@ -1089,6 +1090,31 @@
         </a>
     </aside>
 
+    <aside class="cookie-banner" id="cookie-banner" role="dialog" aria-label="Preferencias de cookies" hidden>
+        <p class="cookie-banner__titulo">Preferencias de privacidad y cookies</p>
+        <p class="cookie-banner__texto">
+            Usamos cookies esenciales para la seguridad y envío de solicitudes. La analítica opcional solo se activa si la autorizas.
+            Revisa el detalle en nuestra <a href="/privacidad.html#cookies">política de tratamiento de datos</a>.
+        </p>
+        <div class="cookie-banner__acciones">
+            <button type="button" class="btn btn--primary" data-cookie-aceptar>Aceptar todas</button>
+            <button type="button" class="btn btn--ghost" data-cookie-rechazar>Solo esenciales</button>
+            <button type="button" class="btn btn--ghost" data-cookie-abrir-config>Configurar</button>
+        </div>
+        <div class="cookie-banner__config" data-cookie-config hidden>
+            <label class="cookie-banner__opcion">
+                <input type="checkbox" checked disabled>
+                <span>Esenciales (seguridad y formulario, siempre activas)</span>
+            </label>
+            <label class="cookie-banner__opcion">
+                <input type="checkbox" data-cookie-analitica>
+                <span>Analítica opcional (medición de navegación sin datos personales)</span>
+            </label>
+            <button type="button" class="btn btn--primary" data-cookie-guardar>Guardar preferencias</button>
+        </div>
+    </aside>
+
+    <script src="assets/js/cookies.js" defer></script>
     <script src="assets/js/main.js" defer></script>
 </body>
 
