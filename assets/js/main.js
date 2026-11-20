@@ -315,9 +315,18 @@ function personasValidas(valor) {
     return /^\d{1,2}$/.test(String(valor)) && Number.isInteger(n) && n >= 1 && n <= MAX_PERSONAS;
 }
 
-/** Solo entra a la URL lo que pasa la lista blanca: fechas reales, rango sano, personas 1..30, ref opaca. */
-function enlaceContinuarReserva(cuerpo, referencia) {
+/** Solo entra a la URL lo que pasa la lista blanca: fechas reales, rango sano, personas 1..30, ref opaca.
+ *  Con `soloRef: true` y una referencia recién emitida, viaja únicamente `?ref=<token_opaco>` para
+ *  no exponer fechas ni datos en texto plano en la URL (el servidor resuelve todo desde el token). */
+function enlaceContinuarReserva(cuerpo, referencia, { soloRef = false } = {}) {
     const params = new URLSearchParams();
+    const ref = referenciaValida(referencia) ? referencia : referenciaGuardada();
+
+    if (soloRef && referenciaValida(referencia)) {
+        params.set('ref', referencia);
+        return `${urlPlataforma()}/reservar?${params.toString()}`;
+    }
+
     const inicio = cuerpo?.check_in;
     const fin = cuerpo?.check_out;
 
@@ -328,8 +337,6 @@ function enlaceContinuarReserva(cuerpo, referencia) {
         params.set('personas', String(personasValidas(cuerpo.huespedes) ? Number(cuerpo.huespedes) : 1));
     }
 
-    const ref = referenciaValida(referencia) ? referencia : referenciaGuardada();
-
     if (ref) {
         params.set('ref', ref);
     }
@@ -338,6 +345,23 @@ function enlaceContinuarReserva(cuerpo, referencia) {
         return '';
     }
 
+    return `${urlPlataforma()}/reservar?${params.toString()}`;
+}
+
+/** Enlace explícito «sin enviar mis datos»: nunca pega una referencia previa y pide a /reservar
+ *  limpiar cualquier sesión anterior (`limpiar=1`) para no arrastrar datos de otra consulta. */
+function enlaceSinDatos(cuerpo) {
+    const params = new URLSearchParams();
+    const inicio = cuerpo?.check_in;
+    const fin = cuerpo?.check_out;
+
+    if (fechaIsoValida(inicio) && fechaIsoValida(fin) && !mensajeRango(inicio, fin, 1)) {
+        params.set('llegada', inicio);
+        params.set('salida', fin);
+        params.set('personas', String(personasValidas(cuerpo.huespedes) ? Number(cuerpo.huespedes) : 1));
+    }
+
+    params.set('limpiar', '1');
     return `${urlPlataforma()}/reservar?${params.toString()}`;
 }
 
@@ -616,10 +640,16 @@ document.addEventListener('click', (evento) => {
     }
 
     const href = enlace.getAttribute('href') || '';
-    const decorado = conReferencia(href);
+    const sinRef = enlace.getAttribute('data-sin-referencia') === '1';
 
-    if (decorado !== href && typeof enlace.setAttribute === 'function') {
-        enlace.setAttribute('href', decorado);
+    if (sinRef) {
+        olvidarReferencia();
+    } else {
+        const decorado = conReferencia(href);
+
+        if (decorado !== href && typeof enlace.setAttribute === 'function') {
+            enlace.setAttribute('href', decorado);
+        }
     }
 
     if (href.startsWith('https://wa.me/')) {
@@ -681,7 +711,7 @@ function mensajeRango(inicio, fin, personas) {
 }
 
 /** Mensaje de error con un enlace opcional para seguir igual (nunca se navega sin avisar). */
-function mostrarDisponibilidadConEnlace(mensaje, enlace, textoEnlace, accion) {
+function mostrarDisponibilidadConEnlace(mensaje, enlace, textoEnlace, accion, { sinReferencia = false } = {}) {
     if (!disponibilidadEstado) {
         return;
     }
@@ -703,6 +733,9 @@ function mostrarDisponibilidadConEnlace(mensaje, enlace, textoEnlace, accion) {
         const a = document.createElement('a');
         a.href = enlace;
         a.textContent = textoEnlace;
+        if (sinReferencia) {
+            a.setAttribute('data-sin-referencia', '1');
+        }
         disponibilidadEstado.append(a);
     }
 
@@ -723,6 +756,9 @@ async function irAReservarConFechas({ conLead, confirmado = false }) {
         return;
     }
 
+    // Limpia cualquier error anterior del formulario de contacto (evita avisos vencidos debajo).
+    setStatus('');
+
     const datos = Object.fromEntries(new FormData(form).entries());
     const cuerpo = cuerpoConsulta(datos);
     const problemaFechas = mensajeRango(cuerpo.check_in, cuerpo.check_out, cuerpo.huespedes ?? 1);
@@ -739,8 +775,8 @@ async function irAReservarConFechas({ conLead, confirmado = false }) {
         huespedes: null,
         mensaje: null
     });
-    // Incluye la referencia guardada si el visitante ya envió una consulta en este navegador.
     const enlaceSoloFechas = enlaceContinuarReserva(cuerpo, '');
+    const enlaceLimpio = enlaceSinDatos(cuerpo);
     const contactoVacio = !cuerpo.nombre && !cuerpo.correo && !cuerpo.telefono;
     const yaConsulto = Boolean(referenciaGuardada());
 
@@ -758,8 +794,10 @@ async function irAReservarConFechas({ conLead, confirmado = false }) {
         // Datos a medio llenar: avisar y dejar corregir antes de salir, para no perderlos.
         mostrarDisponibilidadConEnlace(
             `${problemaContacto} Así llevamos tus datos a la reserva y no tendrás que escribirlos otra vez.`,
-            enlaceSoloFechas,
-            'Seguir sin mis datos'
+            enlaceLimpio,
+            'Seguir sin mis datos',
+            null,
+            { sinReferencia: true }
         );
         return;
     }
@@ -767,13 +805,14 @@ async function irAReservarConFechas({ conLead, confirmado = false }) {
     if (!confirmado) {
         // UX-06: nunca se envía una consulta sin que el visitante lo pida. Se le ofrece explícitamente.
         mostrarDisponibilidadConEnlace(
-            'Para llevar tu nombre y contacto a la reserva, primero enviamos tu consulta a recepción (no confirma la estadía).',
-            enlaceSoloFechas,
+            'Para llevar tu nombre y contacto de forma segura a la reserva (sin exponerlos en la URL), primero registramos tu consulta en recepción (no confirma la estadía).',
+            enlaceLimpio,
             'Seguir sin enviar mis datos',
             {
                 texto: 'Enviar consulta y continuar',
                 alPulsar: () => irAReservarConFechas({ conLead: true, confirmado: true })
-            }
+            },
+            { sinReferencia: true }
         );
         return;
     }
@@ -782,7 +821,7 @@ async function irAReservarConFechas({ conLead, confirmado = false }) {
 
     if (!api || !disponibilidadBoton) {
         mostrarDisponibilidad('Vas a la reserva solo con las fechas; el contacto se pide allá.');
-        irAReserva(enlaceSoloFechas);
+        irAReserva(enlaceLimpio);
         return;
     }
 
@@ -795,8 +834,10 @@ async function irAReservarConFechas({ conLead, confirmado = false }) {
         if (resultado.tipo !== 'respuesta' || (resultado.estado !== 201 && resultado.estado !== 200)) {
             mostrarDisponibilidadConEnlace(
                 mensajeResultadoEnvio(resultado),
-                enlaceSoloFechas,
-                'Seguir sin mis datos'
+                enlaceLimpio,
+                'Seguir sin mis datos',
+                null,
+                { sinReferencia: true }
             );
             return;
         }
@@ -804,12 +845,15 @@ async function irAReservarConFechas({ conLead, confirmado = false }) {
         const referencia = typeof resultado.json?.referencia === 'string' ? resultado.json.referencia : '';
         guardarReferencia(referencia);
         registrarEvento('generate_lead', { event_id: resultado.clave, origen: 'ver_disponibilidad' });
-        irAReserva(enlaceContinuarReserva(cuerpo, referencia));
+        limpiarDatosPersonales();
+        irAReserva(enlaceContinuarReserva(cuerpo, referencia, { soloRef: true }));
     } catch (error) {
         mostrarDisponibilidadConEnlace(
             conCodigo(`No pudimos guardar la consulta. Inténtalo de nuevo o escríbenos por ${WHATSAPP_TEXTO}.`, 'JS'),
-            enlaceSoloFechas,
-            'Seguir sin mis datos'
+            enlaceLimpio,
+            'Seguir sin mis datos',
+            null,
+            { sinReferencia: true }
         );
     } finally {
         disponibilidadBoton.disabled = false;
@@ -1077,6 +1121,10 @@ function mensajeEnvio(estadoHttp, codigo = '') {
     );
 }
 
+form?.addEventListener('input', () => {
+    setStatus('');
+});
+
 form?.addEventListener('submit', async (event) => {
     event.preventDefault();
     setStatus('');
@@ -1112,7 +1160,7 @@ form?.addEventListener('submit', async (event) => {
         if (resultado.tipo === 'respuesta' && (resultado.estado === 201 || resultado.estado === 200)) {
             const referencia = typeof resultado.json?.referencia === 'string' ? resultado.json.referencia : '';
             guardarReferencia(referencia);
-            const continuar = enlaceContinuarReserva(cuerpo, referencia);
+            const continuar = enlaceContinuarReserva(cuerpo, referencia, { soloRef: Boolean(referencia) });
             registrarEvento('generate_lead', { event_id: resultado.clave, origen: 'formulario' });
             limpiarDatosPersonales();
             setStatusConContinuar(mensajeEnvio(resultado.estado), continuar);

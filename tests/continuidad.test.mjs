@@ -185,6 +185,28 @@ test('«Ver disponibilidad» con contacto completo no envía nada sin confirmaci
     assert.equal(llamadas.length, 0);
 });
 
+test('soloRef envía únicamente el token opaco en la URL (sin fechas ni datos en texto plano)', () => {
+    const { ctx } = cargar();
+    const url = new URL(ctx.enlaceContinuarReserva({ check_in: fecha(3), check_out: fecha(5), huespedes: 2 }, REF, { soloRef: true }));
+    assert.deepEqual([...url.searchParams.keys()], ['ref']);
+    assert.equal(url.searchParams.get('ref'), REF);
+});
+
+test('enlaceSinDatos jamás adjunta referencia previa y envía limpiar=1; el clic borra la referencia guardada', () => {
+    const { ctx, oyentes, Element, almacen } = cargar();
+    ctx.guardarReferencia(REF);
+    const href = ctx.enlaceSinDatos({ check_in: fecha(3), check_out: fecha(5), huespedes: 2 });
+    const url = new URL(href);
+    assert.equal(url.searchParams.has('ref'), false);
+    assert.equal(url.searchParams.get('limpiar'), '1');
+    const enlace = new Element(href);
+    const origGet = enlace.getAttribute.bind(enlace);
+    enlace.getAttribute = (n) => (n === 'data-sin-referencia' ? '1' : origGet(n));
+    oyentes.click({ target: enlace });
+    assert.equal(new URL(enlace.href).searchParams.has('ref'), false);
+    assert.equal(almacen.size, 0);
+});
+
 test('landinpage#1: «Reservar este tipo» conserva el tipo y suma la referencia opaca', () => {
     const { ctx, oyentes, Element } = cargar();
     ctx.guardarReferencia(REF);
