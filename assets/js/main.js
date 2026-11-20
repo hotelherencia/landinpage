@@ -614,6 +614,10 @@ function nuevoIdEvento() {
 
 function registrarEvento(nombre, datos = {}) {
     try {
+        if (window.__hhRequiereConsentimiento) {
+            const c = window.__hhConsentimientoCookies;
+            if (!c || c.analitica !== true) return;
+        }
         window.dataLayer = window.dataLayer || [];
         window.dataLayer.push({ event: nombre, ...datos, event_id: datos.event_id || nuevoIdEvento() });
     } catch {
