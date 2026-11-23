@@ -42,7 +42,9 @@ test('reCAPTCHA: el sello flotante se oculta solo junto al aviso con los enlaces
     assert.match(aviso[0], /protegido por reCAPTCHA/);
     assert.match(aviso[0], /https:\/\/policies\.google\.com\/privacy/);
     assert.match(aviso[0], /https:\/\/policies\.google\.com\/terms/);
-    assert.ok(html.indexOf('class="recaptcha-aviso"') < html.indexOf('</form>'), 'el aviso va dentro del formulario');
+    const formContacto = html.match(/<form class="contact-form"[\s\S]*?<\/form>/);
+    assert.ok(formContacto, 'falta el formulario de contacto');
+    assert.ok(formContacto[0].includes('class="recaptcha-aviso"'), 'el aviso va dentro del formulario de contacto');
 });
 
 test('detalle visual a 320–1440 px (si hay Playwright)', async (t) => {
