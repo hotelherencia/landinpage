@@ -1253,3 +1253,47 @@ try {
 } catch {
     // Aviso opcional.
 }
+
+function formatearClp(monto) {
+    if (typeof monto !== 'number' || !Number.isFinite(monto) || monto <= 0) return '';
+    return `$${Math.round(monto).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+}
+
+function actualizarPreciosTarjetas(tipos, doc = typeof document !== 'undefined' ? document : null) {
+    if (!doc || typeof doc.querySelectorAll !== 'function' || !Array.isArray(tipos)) return 0;
+    const mapa = new Map();
+    for (const t of tipos) {
+        if (t && typeof t.tipo === 'string' && typeof t.precio_base_clp === 'number' && t.precio_base_clp > 0) {
+            mapa.set(t.tipo, t.precio_base_clp);
+        }
+    }
+    let actualizadas = 0;
+    doc.querySelectorAll('[data-precio-tipo]').forEach((el) => {
+        const tipo = el.getAttribute('data-precio-tipo');
+        const precio = mapa.get(tipo);
+        if (precio) {
+            el.textContent = `Desde ${formatearClp(precio)} / noche · IVA incl.`;
+            actualizadas += 1;
+        }
+    });
+    return actualizadas;
+}
+
+async function cargarTarifasPublicas() {
+    if (typeof fetch !== 'function' || typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') return;
+    if (!document.querySelectorAll('[data-precio-tipo]').length) return;
+    try {
+        const res = await fetch(`${urlPlataforma()}/api/publico/tarifas`, { method: 'GET' });
+        if (!res.ok) return;
+        const datos = await res.json();
+        if (datos && Array.isArray(datos.tipos)) {
+            actualizarPreciosTarjetas(datos.tipos, document);
+        }
+    } catch {
+        // Silencioso: conserva el texto de respaldo si la red falla.
+    }
+}
+
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+    document.addEventListener('DOMContentLoaded', cargarTarifasPublicas);
+}
