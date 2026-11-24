@@ -1921,3 +1921,10 @@ main:focus {
     text-decoration: underline;
     text-underline-offset: 0.18em;
 }
+
+.room-card__precio {
+    margin: var(--space-3) 0 var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--color-brand);
+}
