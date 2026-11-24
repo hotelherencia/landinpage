@@ -1297,3 +1297,41 @@ async function cargarTarifasPublicas() {
 if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
     document.addEventListener('DOMContentLoaded', cargarTarifasPublicas);
 }
+
+function iniciarBuscadorFaq() {
+    if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return;
+    const input = document.getElementById('faq-buscar');
+    if (!input || typeof document.querySelectorAll !== 'function') return;
+    const items = Array.from(document.querySelectorAll('.faq-item'));
+
+    function filtrar(termino) {
+        const q = String(termino || '').trim().toLowerCase();
+        for (const item of items) {
+            const texto = (item.textContent || '').toLowerCase();
+            const coincide = !q || texto.includes(q);
+            item.hidden = !coincide;
+            if (q && coincide) item.open = true;
+        }
+    }
+
+    input.addEventListener('input', () => filtrar(input.value));
+
+    document.querySelectorAll('[data-faq-chip]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const clave = (btn.getAttribute('data-faq-chip') || '').toLowerCase();
+            input.value = '';
+            filtrar('');
+            const objetivo = items.find((item) => (item.textContent || '').toLowerCase().includes(clave));
+            if (objetivo) {
+                objetivo.open = true;
+                if (typeof objetivo.scrollIntoView === 'function') {
+                    objetivo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        });
+    });
+}
+
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+    document.addEventListener('DOMContentLoaded', iniciarBuscadorFaq);
+}
