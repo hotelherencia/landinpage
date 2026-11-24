@@ -11,6 +11,11 @@ const submitButton = form?.querySelector('.button--submit');
 const checkinInput = document.querySelector('#checkin');
 const checkoutInput = document.querySelector('#checkout');
 const guestsInput = document.querySelector('#guests');
+const bookingBar = document.querySelector('[data-barra-reserva]');
+const bookingBarStatus = bookingBar?.querySelector('[data-barra-estado]');
+const bookingBarLlegada = document.querySelector('#rapido-llegada');
+const bookingBarSalida = document.querySelector('#rapido-salida');
+const bookingBarPersonas = document.querySelector('#rapido-personas');
 
 function setNavOpen(isOpen) {
     if (!siteHeader || !navToggle) {
@@ -1204,10 +1209,90 @@ try {
     // El aviso es opcional: nunca debe impedir usar el formulario.
 }
 
-/* UX: botón fijo «Consultar reserva» oculto mientras el hero o el formulario están a la vista. */
+/**
+ * #414 Flujo único de reserva: barra rápida de 3 campos (Llegada, Salida, Huéspedes).
+ * Valida localmente sin pedir nombre/correo/teléfono y arma la URL directa a /reservar.
+ */
+function enlaceBarraReserva({ llegada, salida, personas } = {}) {
+    const inicio = String(llegada ?? '').trim();
+    const fin = String(salida ?? '').trim();
+    const cantidad = String(personas ?? '').trim();
+    const error = mensajeRango(inicio, fin, cantidad);
+
+    if (error) {
+        return { url: '', error };
+    }
+
+    const params = new URLSearchParams();
+    params.set('llegada', inicio);
+    params.set('salida', fin);
+    params.set('personas', String(Number(cantidad)));
+    return { url: `${urlPlataforma()}/reservar?${params.toString()}`, error: '' };
+}
+
+function mostrarEstadoBarra(mensaje) {
+    if (!bookingBarStatus) {
+        return;
+    }
+
+    bookingBarStatus.textContent = mensaje;
+    bookingBarStatus.hidden = !mensaje;
+    bookingBarStatus.classList.toggle('is-error', Boolean(mensaje));
+}
+
+function sincronizarFechasBarra() {
+    if (!bookingBarLlegada || !bookingBarSalida) {
+        return;
+    }
+
+    const hoy = isoDateFromOffset(0);
+    bookingBarLlegada.min = hoy;
+
+    if (fechaIsoValida(bookingBarLlegada.value)) {
+        const siguiente = new Date(`${bookingBarLlegada.value}T00:00:00`);
+        siguiente.setDate(siguiente.getDate() + 1);
+        bookingBarSalida.min = formatDate(siguiente);
+        if (fechaIsoValida(bookingBarSalida.value) && bookingBarSalida.value <= bookingBarLlegada.value) {
+            bookingBarSalida.value = '';
+        }
+    } else {
+        bookingBarSalida.min = isoDateFromOffset(1);
+    }
+}
+
+sincronizarFechasBarra();
+bookingBarLlegada?.addEventListener('change', () => {
+    sincronizarFechasBarra();
+    mostrarEstadoBarra('');
+});
+bookingBarSalida?.addEventListener('change', () => mostrarEstadoBarra(''));
+bookingBarPersonas?.addEventListener('input', () => mostrarEstadoBarra(''));
+
+bookingBar?.addEventListener('submit', (evento) => {
+    evento.preventDefault();
+    mostrarEstadoBarra('');
+    const { url, error } = enlaceBarraReserva({
+        llegada: bookingBarLlegada?.value,
+        salida: bookingBarSalida?.value,
+        personas: bookingBarPersonas?.value || '2'
+    });
+
+    if (error) {
+        mostrarEstadoBarra(error);
+        return;
+    }
+
+    irAReserva(url);
+});
+
+/* UX: botón fijo «Ver disponibilidad» oculto mientras la barra rápida, el hero o #contacto están a la vista. */
 (function ocultarBotonFijoSobreCtas() {
     const fijo = document.querySelector('.sticky-cta');
-    const vigilados = [document.querySelector('.hero__actions'), document.querySelector('#contacto')].filter(Boolean);
+    const vigilados = [
+        document.querySelector('[data-barra-reserva]'),
+        document.querySelector('.hero__actions'),
+        document.querySelector('#contacto')
+    ].filter(Boolean);
 
     if (!fijo || vigilados.length === 0 || typeof IntersectionObserver !== 'function') {
         return;

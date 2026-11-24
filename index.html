@@ -550,6 +550,28 @@
                         ubicado <strong>a pasos de Avenida Argentina</strong>, punto neurálgico de la cultura gastronómica y recreativa de Chillán.
                     </p>
 
+                    <form class="booking-bar" id="reservar-rapido" data-barra-reserva action="/reservar" method="get" novalidate aria-label="Búsqueda rápida de disponibilidad">
+                        <div class="booking-bar__fields">
+                            <label class="booking-bar__field">
+                                <span>Llegada</span>
+                                <input type="date" id="rapido-llegada" name="llegada" required>
+                            </label>
+                            <label class="booking-bar__field">
+                                <span>Salida</span>
+                                <input type="date" id="rapido-salida" name="salida" required>
+                            </label>
+                            <label class="booking-bar__field booking-bar__field--personas">
+                                <span>Huéspedes</span>
+                                <input type="number" id="rapido-personas" name="personas" min="1" max="30" value="2" inputmode="numeric" required>
+                            </label>
+                            <button class="button button--primary booking-bar__submit" type="submit">
+                                Ver disponibilidad
+                                <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-flecha"/></svg>
+                            </button>
+                        </div>
+                        <p class="form-status booking-bar__status" role="alert" data-barra-estado hidden></p>
+                    </form>
+
                     <div class="hero__actions">
                         <a class="button button--primary button--lg" href="https://plataforma.hotelherencia.cl/reservar">
                             Ver disponibilidad y reservar
@@ -561,7 +583,7 @@
                         </a>
                     </div>
                     <p class="hero__alt">
-                        ¿Prefieres que te contactemos? <a href="#contacto">Envía una consulta</a> · <a href="#ubicacion">Ver ubicación</a>
+                        ¿Viajas en grupo o tienes una consulta general? <a href="#contacto">Escríbenos aquí</a> · <a href="#ubicacion">Ver ubicación</a>
                     </p>
 
                     <ul class="hero__chips" aria-label="Atributos principales del hotel">
@@ -1094,11 +1116,12 @@
         <section class="section section--contact" id="contacto" aria-labelledby="contacto-titulo">
             <div class="container contact">
                 <div class="contact__intro" data-reveal>
-                    <p class="eyebrow">Contacto</p>
-                    <h2 id="contacto-titulo">Consulta disponibilidad en Hotel Herencia</h2>
+                    <p class="eyebrow">Consultas generales y grupos</p>
+                    <h2 id="contacto-titulo">Consultas generales, grupos y convenios</h2>
                     <p>
-                        Si buscas un hotel en Chillán con desayuno, estacionamiento y habitaciones cómodas, envíanos
-                        tus fechas, número de huéspedes y requerimientos para responderte a la brevedad.
+                        Usa este formulario para estadías de grupos (4 o más personas), delegaciones, empresas o
+                        consultas generales. Si solo quieres reservar una habitación, usa la
+                        <a href="#reservar-rapido">barra rápida de fechas</a> arriba para ir directo a la disponibilidad.
                     </p>
 
                     <ul class="contact__canales">
@@ -1171,7 +1194,7 @@
 
                         <div class="contact-form__footer">
                             <button class="button button--primary button--lg button--submit" type="submit">Enviar consulta</button>
-                            <button class="button button--secondary button--lg" type="button" data-ver-disponibilidad>Ver disponibilidad</button>
+                            <a class="button button--secondary button--lg" href="https://plataforma.hotelherencia.cl/reservar">Reservar en línea</a>
                         </div>
                         <p class="contact-form__note">Responderemos a la brevedad. Enviar no confirma la estadía.</p>
 
@@ -1228,9 +1251,9 @@
     </footer>
 
     <aside class="sticky-cta-wrap" aria-label="Acceso rápido a reservas">
-        <a class="sticky-cta" href="#contacto" data-cta-reserva>
+        <a class="sticky-cta" href="#reservar-rapido">
             <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-calendario"/></svg>
-            Consultar reserva
+            Ver disponibilidad
         </a>
     </aside>
 
