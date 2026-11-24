@@ -62,7 +62,7 @@ test('Hotel: NAP coherente con el texto visible, geo numérico y sin datos inven
     const visible = normalizar(html['index.html'].split('<body>')[1]);
     assert.ok(visible.includes(hotel.address.streetAddress), 'dirección del schema visible en la página');
     assert.ok(visible.includes('+56 9 5649 1501'));
-    assert.equal(hotel.telephone, '+56956491501');
+    assert.deepEqual(hotel.telephone, ['+56956491501', '+56223138311']);
     assert.equal(typeof hotel.geo.latitude, 'number');
     assert.equal(typeof hotel.geo.longitude, 'number');
     assert.ok(hotel.geo.latitude < -36.5 && hotel.geo.latitude > -36.7, 'latitud en Chillán');
@@ -255,13 +255,13 @@ test('Hotel JSON-LD tiene los campos confirmados, tipos de schema.org y ninguna 
         assert.match(url, /^https:\/\/www\.hotelherencia\.cl\/assets\/img\//);
         assert.ok(existsSync(new URL(url.replace(BASE, ''), raiz)), `imagen del schema no existe: ${url}`);
     });
-    assert.equal(hotel.telephone, '+56956491501');
+    assert.deepEqual(hotel.telephone, ['+56956491501', '+56223138311']);
     assert.equal(hotel.address['@type'], 'PostalAddress');
     assert.equal(hotel.address.streetAddress, 'Calle Diego de Almagro 751');
     assert.equal(hotel.address.addressLocality, 'Chillán');
     assert.equal(hotel.address.addressRegion, 'Ñuble');
     assert.equal(hotel.address.addressCountry, 'CL');
-    assert.ok(!('postalCode' in hotel.address), 'no inventar código postal');
+    assert.equal(hotel.address.postalCode, '3780000');
     assert.equal(hotel.geo.latitude, -36.5983065);
     assert.equal(hotel.geo.longitude, -72.09031);
     assert.equal(hotel.checkinTime, '14:00');
@@ -274,13 +274,14 @@ test('Hotel JSON-LD tiene los campos confirmados, tipos de schema.org y ninguna 
     assert.deepEqual(amenidades, [
         'WiFi', 'Estacionamiento', 'Desayuno buffet', 'Aire acondicionado',
         'TV cable', 'Baño privado', 'Recepción 24 horas',
+        'Habitaciones en primer piso', 'Baño adaptado',
     ]);
     const textoAmenidades = amenidades.join(' ').toLowerCase();
     for (const prohibido of ['terraza', 'servicio de habitaciones', 'servicio a la habitación', 'cocina', 'familiares']) {
         assert.ok(!textoAmenidades.includes(prohibido), `amenityFeature no debe incluir «${prohibido}»`);
     }
-    assert.ok(!('email' in hotel));
-    assert.ok(!('petsAllowed' in hotel));
+    assert.equal(hotel.email, 'Hotelherencia01@gmail.com');
+    assert.equal(hotel.petsAllowed, true);
     const sameAs = hotel.sameAs;
     assert.ok(sameAs.includes('https://www.instagram.com/hotelherencia/'));
     assert.ok(sameAs.includes('https://maps.app.goo.gl/XYgS4ZHtKSHauBpj8'));

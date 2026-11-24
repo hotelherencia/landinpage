@@ -48,7 +48,8 @@
       - "checkinTime" 14:00 y "checkoutTime" 12:00: POL-009/010. "numberOfRooms" 17 y "priceRange" referencial CLP 47.000 – 65.000 (IVA incluido): Anexo A.
       - "logo": assets/img/logo-herencia-512.png (512x512, PNG con fondo transparente, generado desde el JPEG CMYK de 2362 px).
       - Nombre comercial visible: "Hotel Herencia". "Herencia SpA" es solo la razón social (Organization). El logo histórico incluye la leyenda «Hotel Boutique»; no se declara como alternateName.
-      - Pendiente, no inventar: "postalCode", "email" de recepción, "petsAllowed", "starRating" (solo con clasificación oficial SERNATUR).
+      - Confirmado por Administración (21-11-2026): "postalCode" 3780000, "email" de recepción, teléfono fijo +56 2 2313 8311, "petsAllowed" (mascotas pequeñas sin costo), accesibilidad (8 habitaciones en 1er piso, baño adaptado en Hb 7, sin rampa). Registro Sernatur vigente hasta 31/01/2027.
+      - Pendiente, no inventar: "starRating" (solo con clasificación oficial SERNATUR).
       - Agregar a "sameAs" solo perfiles oficiales reales (Facebook, TripAdvisor, Booking, URL canónica del GBP) cuando existan.
       - No agregar "aggregateRating" ni reseñas: Google no acepta valoraciones de terceros autoservidas en LodgingBusiness.
       - No declarar terraza, servicio a la habitación, cocina ni habitaciones familiares: están en contradicción con el inventario y POL-001.
@@ -138,7 +139,10 @@
             "https://www.hotelherencia.cl/assets/img/124824164.jpg",
             "https://www.hotelherencia.cl/assets/img/cocina.jpg"
           ],
-          "telephone": "+56956491501",
+          "telephone": [
+            "+56956491501",
+            "+56223138311"
+          ],
           "hasMap": "https://maps.app.goo.gl/XYgS4ZHtKSHauBpj8",
           "geo": {
             "@type": "GeoCoordinates",
@@ -161,8 +165,11 @@
             "streetAddress": "Calle Diego de Almagro 751",
             "addressLocality": "Chillán",
             "addressRegion": "Ñuble",
+            "postalCode": "3780000",
             "addressCountry": "CL"
           },
+          "email": "Hotelherencia01@gmail.com",
+          "petsAllowed": true,
           "checkinTime": "14:00",
           "checkoutTime": "12:00",
           "numberOfRooms": 17,
@@ -203,6 +210,16 @@
             {
               "@type": "LocationFeatureSpecification",
               "name": "Recepción 24 horas",
+              "value": true
+            },
+            {
+              "@type": "LocationFeatureSpecification",
+              "name": "Habitaciones en primer piso",
+              "value": true
+            },
+            {
+              "@type": "LocationFeatureSpecification",
+              "name": "Baño adaptado",
               "value": true
             }
           ],
@@ -415,6 +432,54 @@
             "@type": "Answer",
             "text": "No se pide abono previo, salvo en reservas de delegaciones, que pagan el 50 % de la estadía. El saldo se paga a la Llegada; los clientes frecuentes pueden pagar a la Salida y las empresas facturan a fin de mes."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cuáles son las reglas de la estadía?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Se aceptan mascotas pequeñas sin costo (los daños quedan a cargo del huésped). Está prohibido fumar en las habitaciones (multa de 2 UTM); se puede fumar en las terrazas. Los menores de edad se alojan solo bajo supervisión de un adulto. Se permiten visitas con aviso previo en recepción. El guardaequipaje es gratuito antes de la Llegada y después de la Salida."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cuál es el horario del desayuno?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Buffet de lunes a sábado de 07:00 a 10:00 y domingo de 08:00 a 11:00. Si necesitas opción vegetariana o sin gluten, avisa con anticipación a recepción."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Se puede solicitar cena?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí, previa coordinación con recepción. Incluye plato de fondo, ensalada, postre, jugo o café y pan, y se sirve entre las 19:00 y las 00:00."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Hay descuento por reservar más de una noche?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Hay valores especiales según la cantidad de personas y de noches. Consúltalo con recepción al reservar."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿El hotel tiene accesibilidad para personas con movilidad reducida?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Hay 8 habitaciones en el primer piso y una de ellas tiene baño adaptado para personas con discapacidad. El hotel no cuenta con rampa."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cuál es la política de cancelación?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Puedes cancelar sin costo hasta 24 horas antes de la Llegada. Fuera de ese plazo se cobra el total de la reserva (control no-show). Las reservas hechas por Booking se rigen por las condiciones de esa plataforma."
+          }
         }
       ]
     }
@@ -518,7 +583,7 @@
                     </picture>
                     <figcaption class="hero__badge">
                         <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-estrella"/></svg>
-                        <span><strong>Excelentes valoraciones</strong> 8,3 puntos en Booking</span>
+                        <span><strong>Excelentes valoraciones</strong> 8,2 puntos en Booking</span>
                     </figcaption>
                 </figure>
             </div>
@@ -527,7 +592,7 @@
         <section class="trust" aria-label="Por qué elegir Hotel Herencia">
             <div class="container">
                 <ul class="trust__list">
-                    <li><svg class="icono" aria-hidden="true" focusable="false"><use href="#i-estrella"/></svg><span><strong>8,3 en Booking</strong>Valoración de huéspedes</span></li>
+                    <li><svg class="icono" aria-hidden="true" focusable="false"><use href="#i-estrella"/></svg><span><strong>8,2 en Booking</strong>Valoración de huéspedes</span></li>
                     <li><svg class="icono" aria-hidden="true" focusable="false"><use href="#i-pin"/></svg><span><strong>Cerca del centro</strong>A pasos de Avenida Argentina</span></li>
                     <li><svg class="icono" aria-hidden="true" focusable="false"><use href="#i-cafe"/></svg><span><strong>Desayuno incluido</strong>Buffet cada mañana</span></li>
                     <li><svg class="icono" aria-hidden="true" focusable="false"><use href="#i-escudo"/></svg><span><strong>Trato directo</strong>Recepción atiende las 24 horas</span></li>
@@ -942,7 +1007,30 @@
                         <summary><h3>¿Hay que pagar un abono para reservar?</h3></summary>
                         <p>No se pide abono previo, salvo en reservas de delegaciones, que pagan el 50 % de la estadía. El saldo se paga a la Llegada; los clientes frecuentes pueden pagar a la Salida y las empresas facturan a fin de mes.</p>
                     </details>
-                    <!-- Pendiente, no hay respuesta confirmada: "¿Se aceptan mascotas?", "¿El estacionamiento tiene costo?" y la política de cancelación (las fuentes se contradicen). -->
+                    <details class="faq-item">
+                        <summary><h3>¿Cuáles son las reglas de la estadía?</h3></summary>
+                        <p>Se aceptan mascotas pequeñas sin costo (los daños quedan a cargo del huésped). Está prohibido fumar en las habitaciones (multa de 2 UTM); se puede fumar en las terrazas. Los menores de edad se alojan solo bajo supervisión de un adulto. Se permiten visitas con aviso previo en recepción. El guardaequipaje es gratuito antes de la Llegada y después de la Salida.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary><h3>¿Cuál es el horario del desayuno?</h3></summary>
+                        <p>Buffet de lunes a sábado de 07:00 a 10:00 y domingo de 08:00 a 11:00. Si necesitas opción vegetariana o sin gluten, avisa con anticipación a recepción.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary><h3>¿Se puede solicitar cena?</h3></summary>
+                        <p>Sí, previa coordinación con recepción. Incluye plato de fondo, ensalada, postre, jugo o café y pan, y se sirve entre las 19:00 y las 00:00.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary><h3>¿Hay descuento por reservar más de una noche?</h3></summary>
+                        <p>Hay valores especiales según la cantidad de personas y de noches. Consúltalo con recepción al reservar.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary><h3>¿El hotel tiene accesibilidad para personas con movilidad reducida?</h3></summary>
+                        <p>Hay 8 habitaciones en el primer piso y una de ellas tiene baño adaptado para personas con discapacidad. El hotel no cuenta con rampa.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary><h3>¿Cuál es la política de cancelación?</h3></summary>
+                        <p>Puedes cancelar sin costo hasta 24 horas antes de la Llegada. Fuera de ese plazo se cobra el total de la reserva (control no-show). Las reservas hechas por Booking se rigen por las condiciones de esa plataforma.</p>
+                    </details>
                 </div>
             </div>
         </section>

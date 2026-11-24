@@ -34,6 +34,11 @@ No se afirma que el hotel ofrezca terraza en las habitaciones, servicio a la hab
 
 - Check-in: desde las 14:00
 - Check-out: hasta las 12:00
+- Cancelación: sin costo hasta 24 horas antes de la llegada; fuera de plazo se cobra el total (control no-show). Las reservas de Booking se rigen por las condiciones de esa plataforma
+- Desayuno buffet: lunes a sábado 07:00–10:00, domingo 08:00–11:00 (opción vegetariana o sin gluten con aviso previo)
+- Mascotas pequeñas sin costo (daños a cargo del huésped); prohibido fumar en habitaciones (multa 2 UTM), permitido en terrazas; menores solo con adulto; visitas con aviso previo; guardaequipaje gratis
+- Accesibilidad: 8 habitaciones en el primer piso, baño adaptado en una de ellas, sin rampa
+- Contacto: +56 2 2313 8311 (fijo), Hotelherencia01@gmail.com; Booking 8,2; registro Sernatur vigente hasta 31/01/2027; código postal 3780000
 - Early check-in y late check-out: $10.000 por hora, sujeto a disponibilidad
 - Medios de pago: efectivo, tarjeta y transferencia
 - No se pide abono previo, salvo en reservas de delegaciones, que pagan el 50 % de la estadía
@@ -49,11 +54,9 @@ No se afirma que el hotel ofrezca terraza en las habitaciones, servicio a la hab
 
 ## Lo que no está confirmado (no lo inventes)
 
-- Política de cancelación y no-show (las fuentes internas no coinciden)
 - Si el estacionamiento tiene costo
-- Si se aceptan mascotas
-- Correo de recepción, código postal y clasificación oficial de estrellas (SERNATUR)
+- Clasificación oficial de estrellas (SERNATUR)
 - Tarifas exactas por tipo en la página pública (hay un rango referencial en los datos estructurados: CLP 47.000 – 65.000, IVA incluido; no se debe presentar como una oferta reservable en el sitio)
 - Precio de persona extra, política de niños, o diferencia pública entre doble y matrimonial
 
-Última revisión: 2026-11-16
+Última revisión: 2026-11-24
